@@ -21,8 +21,8 @@ estimated_state_values_during_training = algo_MC.find_state_values_yielding(   p
                                                                                 env = RiverEnv(),
                                                                                 n_episodes = 1,
                                                                                 gamma = 0.98)
-for n_iter, estimated_state_values in enumerate(estimated_state_values_during_training):
-    print(f"Iteration {n_iter} :", estimated_state_values)
+for estimated_state_values in estimated_state_values_during_training:
+    print(estimated_state_values)
 
 print("\nComputing action values for the policy policy_swim_randomly...")
 estimated_action_values = algo_MC.find_action_values(    policy = policy_swim_randomly,
@@ -36,5 +36,5 @@ estimated_action_values_during_training = algo_MC.find_action_values_yielding( p
                                                                                 env = RiverEnv(),
                                                                                 n_episodes = 1,
                                                                                 gamma = 0.98)
-for n_iter, estimated_action_values in enumerate(estimated_action_values_during_training):
-    print(f"Iteration {n_iter} :", estimated_action_values)
+for estimated_action_values in estimated_action_values_during_training:
+    print(estimated_action_values)

@@ -11,28 +11,45 @@ class IterativePolicyEvaluation:
                                 gamma : float = 1,
                                 n_iterations : int = None, 
                                 maximal_error : float = None,
+                                sweep_order : str = "normal", # "normal" or "reverse" or "random"
                                 verbose = 1,
                                 ) -> np.ndarray:
         """This method perform the IterativePolicyEvaluation algorithm. It computes an estimation of the state values for a given policy, in a given model (transition_probability and reward_probability).
         The algorithm stop either after a given number of iterations or when the worst error (among the states) between two V(s) estimation consecutive is below a given threshold.
+        
+        transition_probability : a numpy array of shape (n_states, n_actions, n_states) representing the transition probability between states.
+        reward_probability : a numpy array of shape (n_states, n_actions) representing the reward probability for each action in each state.
+        gamma : the discount factor.
+        n_iterations : the number of iterations to perform.
+        maximal_error : the error between 2 consecutives state value below what the algorithm will stop, considering that it has converged.
+        sweep_order : the order in which we will iterate over the states. "normal" or "reverse" or "random". This can have a significant impact on the convergence of the algorithm.
+        verbose : the verbosity level, 0 for no output, 1 for an end output.
         """
 
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
 
+        # Define the order in which we will iterate over the states
         n_states, n_actions = reward_probability.shape
+        states_sweep = np.arange(n_states)
+        if sweep_order == "reverse":
+            states_sweep = np.flip(states_sweep)
+        elif sweep_order == "random":
+            np.random.shuffle(states_sweep)
+
+        # Initialize the state values   
         state_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states,))
         n_iter = 0
         keep_iterating = True
 
         while keep_iterating:
             worst_error = 0
+            # Iterate over the states, update state value in an in-place manner (using only one array).
             for state in range(n_states):
-                state = 10-state
                 value = state_values[state]
                 state_values[state] = self.compute_state_value(state, policy, transition_probability, reward_probability, state_values, gamma)
                 worst_error = max(worst_error, abs(value - state_values[state]))
+            # Stop algorithm if we reached the maximum number of iterations or if the error is below the threshold
             n_iter += 1
-            
             if n_iterations != None and n_iter >= n_iterations:
                 keep_iterating = False
                 if verbose >= 1: print("The algorithm stopped after {} iterations. Stop condition : number of iteration reached.".format(n_iter))
@@ -68,13 +85,21 @@ class IterativePolicyEvaluation:
                                 reward_probability : np.ndarray,
                                 n_iterations : int = None, 
                                 maximal_error : float = None,
-                                gamma : float = 1) -> np.ndarray:
+                                gamma : float = 1,
+                                sweep_order : str = "random", # "normal" or "reverse" or "random"
+                                ) -> np.ndarray:
         """This function is the same as find_state_values, but it yields the state values at each iteration. Use for observe the convergence of the algorithm.
         """
 
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
         
         n_states, n_actions = reward_probability.shape
+        states_sweep = np.arange(n_states)
+        if sweep_order == "reverse":
+            states_sweep = np.flip(states_sweep)
+        elif sweep_order == "random":
+            np.random.shuffle(states_sweep)
+
         state_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states,))
         yield state_values
         n_iter = 0
@@ -82,13 +107,13 @@ class IterativePolicyEvaluation:
 
         while keep_iterating:
             worst_error = 0
-            for state in range(n_states):
-                state = 10-state
+            yield f"Iteration {n_iter} :"
+            for state in states_sweep:
                 value = state_values[state]
                 state_values[state] = self.compute_state_value(state, policy, transition_probability, reward_probability, state_values, gamma)
                 worst_error = max(worst_error, abs(value - state_values[state]))
+                yield state_values
             n_iter += 1
-            yield state_values
             if n_iterations != None and n_iter >= n_iterations:
                 keep_iterating = False
             elif maximal_error != None and worst_error <= maximal_error:
@@ -104,6 +129,7 @@ class IterativePolicyEvaluation:
                                     maximal_error : float = None,
                                     gamma : float = 1,
                                     verbose = 1,
+                                    sweep_order : str = "random", # "normal" or "reverse" or "random"
                                     ) -> np.ndarray:
         
         """This method perform the IterativePolicyEvaluation algorithm. It computes an estimation of the action values for a given policy, in a given model (transition_probability and reward_probability).
@@ -112,19 +138,28 @@ class IterativePolicyEvaluation:
         
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
 
+        # Define the order in which we will iterate over the states
         n_states, n_actions = reward_probability.shape
+        states_sweep = np.arange(n_states)
+        if sweep_order == "reverse":
+            states_sweep = np.flip(states_sweep)
+        elif sweep_order == "random":
+            np.random.shuffle(states_sweep)
+
+        # Initialize the action values
         q_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states, n_actions))
         n_iter = 0
         keep_iterating = True
 
         while keep_iterating:
             worst_error = 0
-            for state in range(n_states):
-                state = 10-state
+            # Iterate over the states and actions, update actions values value in an in-place manner (using only one array).
+            for state in states_sweep:
                 for action in range(n_actions):
                     value = q_values[state][action]
                     q_values[state][action] = self.compute_action_value(state, action, policy, transition_probability, reward_probability, q_values, gamma)
                     worst_error = max(worst_error, abs(value - q_values[state][action]))
+            # Stop algorithm if we reached the maximum number of iterations or if the error is below the threshold
             n_iter += 1
             if n_iterations != None and n_iter >= n_iterations:
                 keep_iterating = False
@@ -153,33 +188,42 @@ class IterativePolicyEvaluation:
         return value
 
 
-    def find_action_values_yielding(self,    policy : DiscretePolicyForDiscreteState,
-                                    transition_probability : np.ndarray,
-                                    reward_probability : np.ndarray,
-                                    n_iterations : int = None, 
-                                    maximal_error : float = None,
-                                    gamma : float = 1) -> np.ndarray:
+    def find_action_values_yielding(self,   policy : DiscretePolicyForDiscreteState,
+                                            transition_probability : np.ndarray,
+                                            reward_probability : np.ndarray,
+                                            n_iterations : int = None, 
+                                            maximal_error : float = None,
+                                            gamma : float = 1,
+                                            sweep_order : str = "random", # "normal" or "reverse" or "random"
+                                            ) -> np.ndarray:
         
         """This function is the same as find_action_values, but it yields the action values at each iteration. Use for observe the convergence of the algorithm.
         """
 
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
 
-        q_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (policy.n_states, policy.n_actions))
+        n_states, n_actions = reward_probability.shape
+        states_sweep = np.arange(n_states)
+        if sweep_order == "reverse":
+            states_sweep = np.flip(states_sweep)
+        elif sweep_order == "random":
+            np.random.shuffle(states_sweep)
+
+        q_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states, n_actions))
         yield q_values
         n_iter = 0
         keep_iterating = True
 
         while keep_iterating:
             worst_error = 0
-            for state in range(policy.n_states):
-                state=10-state
-                for action in range(policy.n_actions):
+            yield f"Iteration {n_iter} :"
+            for state in states_sweep:
+                for action in range(n_actions):
                     value = q_values[state][action]
                     q_values[state][action] = self.compute_action_value(state, action, policy, transition_probability, reward_probability, q_values, gamma)
                     worst_error = max(worst_error, abs(value - q_values[state][action]))
+                    yield q_values
             n_iter += 1
-            yield q_values
             if n_iterations != None and n_iter >= n_iterations:
                 keep_iterating = False
             elif maximal_error != None and worst_error <= maximal_error:
@@ -195,8 +239,7 @@ class PolicyIteration:
                                     IPE_n_iterations : int = None, 
                                     IPE_maximal_error : float = None,
                                     n_iterations : int = float("inf"),
-                                    return_state_values : bool = False,
-                                    return_state_actions_values : bool = False,
+                                    return_action_values : bool = False,
                                     verbose : int = 0,
                                     ) -> Union[ DiscretePolicyForDiscreteState, 
                                                 Tuple[DiscretePolicyForDiscreteState, np.ndarray], 
@@ -211,8 +254,7 @@ class PolicyIteration:
         IPE_n_iterations : the number of iterations for the IPE algorithm.
         IPE_maximal_error : the maximal error allowed for the IPE algorithm.
         n_iterations : the number of iterations for the policy iteration algorithm.
-        return_state_values : if True, the state values are returned with the policy
-        return_state_actions_values : if True, the actions values are returned with the policy and the state values.
+        return_action_values : if True, the action values are returned with the policy
         verbose : the verbosity level. 0 : no print, 1 : print when PI has finished.
         """
         assert n_iterations >= 1, "The number of iterations must be strictly positive."
@@ -232,15 +274,15 @@ class PolicyIteration:
             probs = np.zeros((n_states, n_actions))         # convert deterministic actions to stochastic policy
             probs[np.arange(n_states), actions] = 1
             policy = DiscretePolicyForDiscreteState(probs)
-            state_values = algo_IPE.find_state_values(policy, transition_probability, reward_probability, gamma, 
+            action_values = algo_IPE.find_action_values(policy, transition_probability, reward_probability, 
                                                                                                         n_iterations = IPE_n_iterations, 
                                                                                                         maximal_error = IPE_maximal_error,
+                                                                                                        gamma = gamma,
                                                                                                         verbose = 0,)
             #Policy improvement
             actions_old = actions.copy()
             for state in range(n_states):
-                action = actions[state]
-                actions[state] = np.argmax(reward_probability + gamma * transition_probability[state, action, :].dot(state_values))
+                actions[state] = np.argmax(action_values[state])
             
             n_iter += 1
             if (actions == actions_old).all():
@@ -252,11 +294,8 @@ class PolicyIteration:
             else:
                 print("Policy Iteration stopped after {} iterations. Stop condition : maximal number of iterations reached.".format(n_iter))
 
-        if return_state_actions_values:
-            q_values = reward_probability + gamma * transition_probability[:, :, :].dot(state_values)
-            return policy, state_values, q_values
-        elif return_state_values:
-            return policy, state_values
+        if return_action_values:
+            return policy, action_values
         else:
             return policy
     
@@ -268,11 +307,10 @@ class PolicyIteration:
                                     IPE_n_iterations : int = None, 
                                     IPE_maximal_error : float = None,
                                     n_iterations : int = float("inf"),
-                                    return_state_values : bool = False,
-                                    return_state_actions_values : bool = False,
+                                    return_action_values : bool = False,
                                     ) -> tuple:
 
-        """This method performs the Policy Iteration algorithm as find_optimal_policy but yield probs (and eventually V and/or Q).
+        """This method performs the Policy Iteration algorithm as find_optimal_policy but yield pi(s) and Q(s,a).
         """
         assert n_iterations >= 1, "The number of iterations must be strictly positive."
 
@@ -286,31 +324,29 @@ class PolicyIteration:
 
         n_iter = 0
         while n_iter < n_iterations:
+            yield "Iteration {} :".format(n_iter)
 
             #Iterative Policy Evaluation
             probs = np.zeros((n_states, n_actions))         # convert deterministic actions to stochastic policy
             probs[np.arange(n_states), actions] = 1
             policy = DiscretePolicyForDiscreteState(probs)
-            state_values = algo_IPE.find_state_values(policy, transition_probability, reward_probability, gamma, 
+            action_values = algo_IPE.find_action_values(policy, transition_probability, reward_probability, 
                                                                                                         n_iterations = IPE_n_iterations, 
                                                                                                         maximal_error = IPE_maximal_error,
+                                                                                                        gamma = gamma,
                                                                                                         verbose = 0,)
-            if return_state_actions_values:  
-                q_values = reward_probability + gamma * transition_probability[:, :, :].dot(state_values)
-                yield policy, state_values, q_values
-            elif return_state_values:
-                yield policy, state_values
-            else:
-                yield policy 
+            for q in action_values:
+                yield q
 
             #Policy improvement
             actions_old = actions.copy()
             for state in range(n_states):
-                action = actions[state]
-                actions[state] = np.argmax(reward_probability + gamma * transition_probability[state, action, :].dot(state_values))
-            
+                actions[state] = np.argmax(action_values[state])
+                yield actions
+
             n_iter += 1
             if (actions == actions_old).all():
-                break
+                yield "Policy Iteration stopped after {} iterations. Stop condition : policy is stable.".format(n_iter)
+                return
         
-        
+        yield "Policy Iteration stopped after {} iterations. Stop condition : maximal number of iterations reached.".format(n_iter)

@@ -30,7 +30,7 @@ estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   
                                                                                 env = RiverEnv(),
                                                                                 n_episodes = n_episodes,
                                                                                 gamma=0.98)
-VS = [e.copy() for e in estimated_state_values_during_training]
+VS = [e.copy() if type(e) == np.ndarray else e for e in estimated_state_values_during_training]
                                                                          
 
 fig, ax = plt.subplots()
@@ -46,8 +46,11 @@ line, = ax.plot(S, -S, "-r", label="True State Values (-s)")
 ax.legend()
 
 def update(n):
-    ax.set_title(f"Policy join_beach : Episode ~ {n//(len(VS)//n_episodes)}/{n_episodes}")
-    points.set_ydata(VS[n])
+    data = VS[n]
+    if type(data) == str:
+        ax.set_title(f"Policy join_beach : {data}")
+    elif type(data) == np.ndarray:
+        points.set_ydata(VS[n])
 
 anim = FuncAnimation(   fig = fig,
                         func = update,
@@ -67,7 +70,7 @@ estimated_action_values_during_training = algo_IPE.find_action_values_yielding( 
                                                                                 env = RiverEnv(),
                                                                                 n_episodes = n_episodes,
                                                                                 gamma=0.98)
-QSA = [e.copy() for e in estimated_action_values_during_training] 
+QSA = [e.copy() if type(e) == np.ndarray else e for e in estimated_action_values_during_training]                                                                         
                                                                          
 
 fig, ax = plt.subplots()
@@ -82,9 +85,13 @@ points_get_far, =    ax.plot(S, QSA[0][:, 1], "xr", label = "Estimated Q(s,a) fo
 ax.legend()
 
 def update(n):
-    ax.set_title(f"Policy join_beach : Episode ~ {n//(len(QSA)//n_episodes)}/{n_episodes}")
-    points_get_closer.set_ydata(QSA[n][:, 0])
-    points_get_far.set_ydata(QSA[n][:, 1])
+    data = QSA[n]
+    if type(data) == str:
+        ax.set_title(f"Policy join_beach : {data}")
+    elif type(data) == np.ndarray:
+        points_get_closer.set_ydata(QSA[n][:, 0])
+        points_get_far.set_ydata(QSA[n][:, 1])
+
 
 anim = FuncAnimation(   fig = fig,
                         func = update,
@@ -108,7 +115,7 @@ estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   
                                                                                 n_episodes = n_episodes,
                                                                                 gamma=0.8,
                                                                                 horizon = 30,)
-VS = [e.copy() for e in estimated_state_values_during_training]
+VS = [e.copy() if type(e) == np.ndarray else e for e in estimated_state_values_during_training]
                                                                          
 
 fig, ax = plt.subplots()
@@ -123,8 +130,11 @@ points, = ax.plot(S, VS[0], ".b", label = "Estimated State Values")
 ax.legend()
 
 def update(n):
-    ax.set_title(f"Policy leave_beach : Episode ~ {n//(len(VS)//n_episodes)}/{n_episodes}")
-    points.set_ydata(VS[n])
+    data = VS[n]
+    if type(data) == str:
+        ax.set_title(f"Policy leave_beach : {data}")
+    elif type(data) == np.ndarray:
+        points.set_ydata(VS[n])
 
 anim = FuncAnimation(   fig = fig,
                         func = update,
@@ -146,7 +156,7 @@ estimated_action_values_during_training = algo_IPE.find_action_values_yielding( 
                                                                                 n_episodes = n_episodes,
                                                                                 gamma=0.8,
                                                                                 horizon = 30,)
-QSA = [e.copy() for e in estimated_action_values_during_training] 
+QSA = [e.copy() if type(e) == np.ndarray else e for e in estimated_action_values_during_training]                                                                         
                                                                          
 
 fig, ax = plt.subplots()
@@ -161,9 +171,13 @@ points_get_far, =    ax.plot(S, QSA[0][:, 1], "xr", label = "Estimated Q(s,a) fo
 ax.legend()
 
 def update(n):
-    ax.set_title(f"Policy leave_beach : Episode ~ {n//(len(QSA)//n_episodes)}/{n_episodes}")
-    points_get_closer.set_ydata(QSA[n][:, 0])
-    points_get_far.set_ydata(QSA[n][:, 1])
+    data = QSA[n]
+    if type(data) == str:
+        ax.set_title(f"Policy leave_beach : {data}")
+    elif type(data) == np.ndarray:
+        points_get_closer.set_ydata(QSA[n][:, 0])
+        points_get_far.set_ydata(QSA[n][:, 1])
+
 
 anim = FuncAnimation(   fig = fig,
                         func = update,
@@ -189,7 +203,7 @@ estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   
                                                                                 env = RiverEnv(),
                                                                                 n_episodes = n_episodes,
                                                                                 gamma=0.98)
-VS = [e.copy() for e in estimated_state_values_during_training]
+VS = [e.copy() if type(e) == np.ndarray else e for e in estimated_state_values_during_training]
                                                                          
 
 fig, ax = plt.subplots()
@@ -204,8 +218,11 @@ points, = ax.plot(S, VS[0], ".b", label = "Estimated State Values")
 ax.legend()
 
 def update(n):
-    ax.set_title(f"Policy swim_randomly : Episode ~ {n//(len(VS)//n_episodes)}/{n_episodes}")
-    points.set_ydata(VS[n])
+    data = VS[n]
+    if type(data) == str:
+        ax.set_title(f"Policy swim_randomly : {data}")
+    elif type(data) == np.ndarray:
+        points.set_ydata(VS[n])
 
 anim = FuncAnimation(   fig = fig,
                         func = update,
@@ -226,7 +243,7 @@ estimated_action_values_during_training = algo_IPE.find_action_values_yielding( 
                                                                                 env = RiverEnv(),
                                                                                 n_episodes = n_episodes,
                                                                                 gamma=0.98)
-QSA = [e.copy() for e in estimated_action_values_during_training] 
+QSA = [e.copy() if type(e) == np.ndarray else e for e in estimated_action_values_during_training]                                                                         
                                                                          
 
 fig, ax = plt.subplots()
@@ -241,9 +258,12 @@ points_get_far, =    ax.plot(S, QSA[0][:, 1], "xr", label = "Estimated Q(s,a) fo
 ax.legend()
 
 def update(n):
-    ax.set_title(f"Policy swim_randomly : Episode ~ {n//(len(QSA)//n_episodes)}/{n_episodes}")
-    points_get_closer.set_ydata(QSA[n][:, 0])
-    points_get_far.set_ydata(QSA[n][:, 1])
+    data = QSA[n]
+    if type(data) == str:
+        ax.set_title(f"Policy swim_randomly : {data}")
+    elif type(data) == np.ndarray:
+        points_get_closer.set_ydata(QSA[n][:, 0])
+        points_get_far.set_ydata(QSA[n][:, 1])
 
 anim = FuncAnimation(   fig = fig,
                         func = update,
