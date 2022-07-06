@@ -242,7 +242,19 @@ class MonteCarlo:
 
                     t += 1
                     state = next_state
+
+                    # Horizon : we artificially set the episode as done if a certain number of steps is reached
                     if t >= horizon: done = True
+
+                    # If s' is a terminal state, we will still take into account the returns of this terminal state with all actions (which is 0 by convention) in the computation of the action values of this terminal state
+                    if done: 
+                        for action in range(n_actions):
+                            qstate = Q_State(state, action)
+                            if not qstate in qstates_was_seen:
+                                qstates_returns[qstate] = 0    
+                                qstates_first_time_seen[qstate] = t    
+                                qstates_was_seen.add(qstate)
+
                                 
                 #Update incrementally the state values
                 for qstate in qstates_was_seen:
@@ -323,17 +335,22 @@ class MonteCarlo:
                     t += 1
                     state = next_state
                     if t >= horizon: done = True
-                                
+                    if done: 
+                        for action in range(n_actions):
+                            qstate = Q_State(state, action)
+                            if not qstate in qstates_was_seen:
+                                qstates_returns[qstate] = 0    
+                                qstates_first_time_seen[qstate] = t    
+                                qstates_was_seen.add(qstate)
+
                 #Update incrementally the state values
                 for qstate in qstates_was_seen:
-                    #Add 1 to the number of times the state was seen, define N by the way
                     if qstate in nbr_qstate_seen_in_episode:
                         N = nbr_qstate_seen_in_episode[qstate]
                         nbr_qstate_seen_in_episode[qstate] = N + 1
                     else: 
                         N = 0
                         nbr_qstate_seen_in_episode[qstate] = N + 1
-                    #Update the state value
                     G = qstates_returns[qstate]
                     state, action = qstate.observation, qstate.action
                     if averaging_method == "cumulative":
