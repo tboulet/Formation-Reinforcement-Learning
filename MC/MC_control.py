@@ -12,7 +12,7 @@ optimal_policy, action_values = algo_MC.find_optimal_policy(env = env,
                                                             gamma=.98,
                                                             n_iterations=n_iterations,
                                                             evaluation_episodes=400,
-                                                            exploration_method='exploring_starts',
+                                                            exploration_method='epsilon_greedy',
                                                             epsilon=.1,
                                                             visit_method="first_visit",
                                                             averaging_method="moving",
@@ -24,15 +24,22 @@ optimal_policy, action_values = algo_MC.find_optimal_policy(env = env,
                                                             verbose=1,
                                                             done_states={0}
                                                             )
-print("Optimal policy:", optimal_policy.probs)
+print("Optimal policy's probs:", optimal_policy.probs)
 print("Final action values:", action_values)
 
-# print("\nPolicy during the learning:")
-# policies_and_actions = algo_IP.find_optimal_policy_yielding( transition_probability, 
-#                                             reward_probability, 
-#                                             gamma=.98,
-#                                             n_iterations=5,
-#                                             return_action_values=True,
-#                                             )
-# for elem in policies_and_actions:
-#     print(elem)
+print("\Actions and action values during the learning:")
+for elem in algo_MC.find_optimal_policy_yielding(   env = env,
+                                                    gamma=.98,
+                                                    n_iterations=n_iterations,
+                                                    evaluation_episodes=20,
+                                                    exploration_method='epsilon_greedy',
+                                                    epsilon=.1,
+                                                    visit_method="first_visit",
+                                                    averaging_method="moving",
+                                                    alpha=.1,
+                                                    horizon=40,
+                                                    initial_action_values="optimistic",
+                                                    typical_value=-10,
+                                                    done_states={0},
+                                                    ):
+    print(elem)

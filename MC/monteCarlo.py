@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Union
+from typing import Callable, Iterator, Tuple, Union
 import numpy as np
 import gym
 
@@ -289,27 +289,32 @@ class MonteCarlo:
                                     horizon : int = float("inf"),
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value = 1,
-                                    ) -> np.ndarray:
+                                    exploring_starts : bool = False,
+                                    done_states : set = None,
+                                    ) -> Iterator:
             """
-            This method perform the MonteCarlo algorithm. It computes an estimation of the action values for a given policy in a given env.
-            The algorithm stop after a certain number of iterations.
+            Same as find_action_values, but yields the action values at each step.
             """
             assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
             assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
+            assert n_episodes > 0, "The number of episodes must be strictly positive."
+            assert not exploring_starts or done_states is not None, "If exploring_starts is True, done_states must be a set of terminal states."
 
             # Initialize the action values
             n_states, n_actions = env.observation_space.n, env.action_space.n
             action_values = self.initialize_values( shape = (n_states, n_actions), 
                                                     initial_values = initial_action_values, 
                                                     typical_value = typical_value)
-            
+            if done_states is not None: # If terminal states are specified, we initialize the action values at 0 for those states
+                action_values[list(done_states), :] = 0
+
             yield action_values
             nbr_qstate_seen_in_episode = dict()
             num_ep = 0
             initial_value = lambda: 0
 
             while num_ep < n_episodes:
-                yield f"Episode {num_ep+1}/{n_episodes}"
+                yield f"MC Evaluation Episode {num_ep+1}/{n_episodes}"
                 state = env.reset()
                 t = 0
                 qstates_returns = dict()                                     
@@ -319,7 +324,16 @@ class MonteCarlo:
                 #Run one episode
                 done = False
                 while not done:
-                    action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                    if not exploring_starts or t >= 1:
+                        action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                    else:
+                        state_temp = np.random.choice(n_states)
+                        if state_temp not in done_states:
+                            env.state = state_temp
+                            state = state_temp
+                            action = np.random.choice(n_actions)
+                        else:
+                            action = np.random.choice(policy.n_actions, p=policy.probs[state])
                     qstate = Q_State(state, action)
                     
                     if not qstate in qstates_was_seen:
@@ -378,7 +392,7 @@ class MonteCarlo:
                                     return_action_values : bool = False,
                                     done_states : set = None,
                                     verbose : int = 1,
-                                    ):
+                                    ) -> Union[DiscretePolicyForDiscreteState, Tuple[DiscretePolicyForDiscreteState, np.ndarray]]:
         """This method perform a MonteCarlo method for the Control Problem.
         It learns the optimal policy among the explorative policies for the given env.
 
@@ -459,7 +473,81 @@ class MonteCarlo:
         if return_action_values:
             return policy, action_values
         else:
-            return policy  
+            return policy
+
+
+
+    def find_optimal_policy_yielding(self,  env : gym.Env,
+                                            gamma : float = 1,
+                                            n_iterations : int = 10,
+                                            evaluation_episodes : int = 1,
+                                            exploration_method : str = "epsilon_greedy", # "epsilon_greedy" or "UCB"
+                                            epsilon : Union[float, Scheduler] = 0.1,
+                                            visit_method : str = "first_visit", # "first_visit" or "every_visit"
+                                            averaging_method : str = "cumulative", # "cumulative" or "moving"
+                                            alpha : float = 0.1,
+                                            horizon : int = float("inf"),
+                                            initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
+                                            typical_value : float = 1,
+                                            done_states : set = None,
+                                    ) -> Iterator:
+        """Same as find_optimal_policy, but yields the action values along with the actions through the training
+        """
+        
+        assert exploration_method in ["epsilon_greedy", "UCB", "exploring_starts", "greedy"], "Unknown exploration method : {}".format(exploration_method)
+        assert n_iterations >= 1, "The number of iterations must be at least 1"
+        assert evaluation_episodes >= 1, "The number of evaluation episodes must be at least 1"
+
+        n_states, n_actions = env.observation_space.n, env.action_space.n
+        greedy_actions = np.random.choice(np.array([a for a in range(n_actions)]), size = n_states,)
+        action_values = self.initialize_values( shape = (n_states, n_actions), 
+                                                    initial_values = initial_action_values, 
+                                                    typical_value = typical_value)
+        yield greedy_actions
+        yield action_values
+
+        n_iter = 0
+        while True:
+            yield f"MC Control Iteration {n_iter}/{n_iterations}"
+            num_episode = n_iter * evaluation_episodes
+
+            #Policy improvement : policy is defined from the greedy actions which are defined from Q. The policy obtained can be explorative (eps-greedy, UCB) in order to increase exploration.
+            if exploration_method == "epsilon_greedy":
+                eps = epsilon if np.isscalar(epsilon) else epsilon(timestep=None, episode=num_episode)
+                probs = np.ones((n_states, n_actions)) * (eps/n_actions)
+                probs[range(n_states), greedy_actions] = 1 - eps + (eps/n_actions)
+            elif exploration_method == "UCB":
+                raise NotImplementedError("UCB exploration method is not implemented yet")
+            elif exploration_method == "exploring_starts":
+                probs = np.zeros((n_states, n_actions))
+                probs[range(n_states), greedy_actions] = 1
+                assert done_states is not None, "The done_states parameter must be set for the exploring starts method"
+            elif exploration_method == "greedy":
+                probs = np.zeros((n_states, n_actions))
+                probs[range(n_states), greedy_actions] = 1
+            policy = DiscretePolicyForDiscreteState(probs = probs)
+
+            if n_iter >= n_iterations:
+                break   #We put a break condition here rather than one in the While so that we have (explorative_policy(Q), Q) at the end.
+
+            #Evaluate the policy
+            for action_values_or_str in self.find_action_values_yielding(policy = policy,
+                                                    env = env,
+                                                    n_episodes=evaluation_episodes,
+                                                    gamma=gamma,
+                                                    visit_method=visit_method,
+                                                    averaging_method=averaging_method,
+                                                    alpha=alpha,
+                                                    horizon=horizon,
+                                                    initial_action_values=action_values,
+                                                    typical_value=typical_value,
+                                                    exploring_starts=exploration_method == "exploring_starts",
+                                                    done_states=done_states,):
+                yield action_values_or_str
+            action_values = action_values_or_str.copy()
+            greedy_actions = np.argmax(action_values, axis=1)
+            yield greedy_actions
+            n_iter += 1
 
 
 
