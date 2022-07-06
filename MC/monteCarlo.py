@@ -314,7 +314,7 @@ class MonteCarlo:
             initial_value = lambda: 0
 
             while num_ep < n_episodes:
-                yield f"MC Evaluation Episode {num_ep+1}/{n_episodes}"
+                yield f"MC Prediction {num_ep+1}/{n_episodes}"
                 state = env.reset()
                 t = 0
                 qstates_returns = dict()                                     
@@ -508,7 +508,7 @@ class MonteCarlo:
 
         n_iter = 0
         while True:
-            yield f"MC Control Iteration {n_iter}/{n_iterations}"
+            yield f"MC Control {n_iter}/{n_iterations}"
             num_episode = n_iter * evaluation_episodes
 
             #Policy improvement : policy is defined from the greedy actions which are defined from Q. The policy obtained can be explorative (eps-greedy, UCB) in order to increase exploration.
