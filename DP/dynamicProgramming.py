@@ -1,5 +1,5 @@
 from time import sleep, time
-from typing import Tuple, Union
+from typing import Iterator, Tuple, Union
 import numpy as np
 
 from policies import *
@@ -273,7 +273,6 @@ class PolicyIteration:
                                     return_action_values : bool = False,
                                     verbose : int = 1,
                                     ) -> Union[ DiscretePolicyForDiscreteState, 
-                                                Tuple[DiscretePolicyForDiscreteState, np.ndarray], 
                                                 Tuple[DiscretePolicyForDiscreteState, np.ndarray, np.ndarray]]:
 
         """This method performs the Policy Iteration algorithm. It computes an optimal policy for a given model (transition_probability and reward_probability).
@@ -340,7 +339,7 @@ class PolicyIteration:
                                     IPE_n_iterations : int = None, 
                                     IPE_maximal_error : float = None,
                                     n_iterations : int = float("inf"),
-                                    ) -> tuple:
+                                    ) -> Iterator:
 
         """This method performs the Policy Iteration algorithm as find_optimal_policy but yield pi(s) (the actions) and Q(s,a).
         """
@@ -399,7 +398,7 @@ class ValueIteration(PolicyIteration):
                                     n_iterations : int = None, 
                                     return_action_values : bool = False,
                                     verbose : int = 1,
-                                    ):
+                                    ) -> Union[DiscretePolicyForDiscreteState, np.ndarray]:
         """This class implements the Value Iteration algorithm. It computes an optimal value function for a given model (transition_probability and reward_probability).
         The algorithm stop either when the value function is stable (no change in the value function) or when the number of iterations is reached.
 
@@ -429,7 +428,7 @@ class ValueIteration(PolicyIteration):
                                                     reward_probability : np.ndarray,
                                                     gamma : float = 1,
                                                     n_iterations : int = None, 
-                                                    ):
+                                                    ) -> Iterator:
         """This method performs the Policy Iteration algorithm as find_optimal_policy but yield pi(s) (the actions) and Q(s,a).
         """
         results = self.algo_PI.find_optimal_policy_yielding(transition_probability = transition_probability,

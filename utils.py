@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Callable, Union
 
 class Observation: pass
 class Action: pass
@@ -15,3 +15,18 @@ class Q_State:
         return self.observation == other.observation and self.action == other.action
     def __str__(self):
         return f"({self.observation}, {self.action})"
+
+class Scheduler(Callable):
+    """A Scheduler is a callable that given a number of episode or steps, returns the value of an hyper-parameter (learning rate, epsilon) to apply."""
+    def __init__(self, unit):
+        if not unit in ["episodes", "steps"]:
+            raise ValueError("Scheduler unit must be either 'episodes' or 'steps'")
+        self.unit = unit
+        super().__init__()
+    def __call__(self, timestep: Union[int, None], episode : Union[int, None]):
+        raise NotImplementedError("Scheduler must be implemented")
+
+def pretty_announcer(string):
+    return    "\n==========================================================\n" \
+            + string \
+            + "\n==========================================================\n"

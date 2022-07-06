@@ -28,13 +28,25 @@ print("\nComputing action values for the policy policy_swim_randomly...")
 estimated_action_values = algo_MC.find_action_values(    policy = policy_swim_randomly,
                                                         env = RiverEnv(),
                                                         n_episodes=100,
-                                                        gamma=0.98)
+                                                        gamma=0.98,
+                                                        visit_method="first_visit",
+                                                        averaging_method="moving",
+                                                        alpha=0.05,
+                                                        horizon=40,
+                                                        initial_action_values="optimistic",
+                                                        typical_value=-10,)
 print("Estimated action values :", estimated_action_values)
 
 print("\nEstimated action values during the learning:")
-estimated_action_values_during_training = algo_MC.find_action_values_yielding( policy = policy_swim_randomly,
+estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_swim_randomly,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = 1,
-                                                                                gamma = 0.98)
+                                                                                n_episodes=1,
+                                                                                gamma=0.98,
+                                                                                visit_method="first_visit",
+                                                                                averaging_method="moving",
+                                                                                alpha=0.05,
+                                                                                horizon=40,
+                                                                                initial_action_values="optimistic",
+                                                                                typical_value=-10,)
 for estimated_action_values in estimated_action_values_during_training:
     print(estimated_action_values)
