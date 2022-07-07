@@ -11,56 +11,81 @@ class MonteCarlo:
                                 env : gym.Env,
                                 n_episodes : int,
                                 gamma : float = 0.99,
-                                method : str = "first_visit", # "first_visit" or "every_visit"
+                                visit_method : str = "first_visit", # "first_visit" or "every_visit"
+                                averaging_method : str = "cumulative", # "cumulative" or "moving"
+                                alpha : float = 0.1,
                                 horizon : int = float("inf"),
+                                initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                typical_value : float = 1.,
+                                exploring_starts : bool = False,
+                                is_state_done : Callable = None,
+                                verbose : int = 1,
                                 ) -> np.ndarray:
         """
         This method perform the MonteCarlo algorithm. It computes an estimation of the state values for a given policy.
         The algorithm stop after a certain number of iterations.
-        Current version is :
-            - first-visit (ie if a state is seen at t1 and t2, we only consider the value G(t1))
-            - cumulative-averaging : ie the state value are estimated as the average of all the G seen in the pas and equally weighted.
 
         policy : the policy to evaluate
         env : the environment to evaluate the policy on
         n_episodes : the number of episodes of interaction with the env to perform the algorithm
         gamma : the discount factor
-        method : the method to use to update the state values, currently only "first_visit" is supported
+        visit_method : the method to use to update the state values, currently only "first_visit" is supported
+        averaging_method : the method to use to update the action values. Cumulative is to "tend to" V, while moving is to permanently "track" V. Use the latest for non stationary env.
+        alpha : the learning rate
         horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+        initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
+        typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
+        exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
+        is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
         """
+
+        if verbose >= 1 : 
+            print(pretty_announcer(f"Start algorithm Monte Carlo Prediction for V ({visit_method}, {averaging_method}-average).\nExploring starts : {exploring_starts}\nEpisodes : {n_episodes}."))
+
         assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
         assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
+        assert n_episodes > 0, "The number of episodes must be positive."
+        assert not exploring_starts or is_state_done is not None, "The is_state_done function must be provided if exploring_starts is True."
 
         # Initialize the state values
-        state_values = np.zeros(policy.n_states)
+        state_values = self.initialize_values(shape = (policy.n_states,),
+                                                initial_values = initial_state_values,
+                                                typical_value = typical_value)
         nbr_state_seen_in_episode = dict()
         num_ep = 0
         initial_value = lambda: 0
 
         while num_ep < n_episodes:
-            state = env.reset()
+            if verbose >= 1 : print(f"MC Prediction of V - Episode {num_ep}/{n_episodes}")
+
+            # Reset the env.
+            if not exploring_starts:
+                state = env.reset()
+            # If exploring_starts is True, the algorithm will start at a random-non terminal state. This can only be used if you can define correctly a is_don_state(state) function AND if you can set the state of your env using "env.state = the_new_state".
+            else:
+                state_temp = np.random.randint(0, policy.n_states-1)
+                if not is_state_done(state_temp):
+                    state = state_temp
+                    env.state = state_temp
+                else:
+                    state = env.reset()
+
             t = 0
             states_returns = dict()                                       #dict mapping states to returns G = sum(gamma^t * r) of the coming episode
             states_first_time_seen = dict()                               #dict mapping states to the first time they are seen in the coming episode
             states_was_seen = set()                                       #set of seen states in the coming episode
-
-            states_returns[state] = initial_value()     
-            states_first_time_seen[state] = t    
-            states_was_seen.add(state) 
 
             #Run one episode
             done = False
             while not done:
                 action = np.random.choice(policy.n_actions, p=policy.probs[state])
                 next_state, reward, done, _ = env.step(action)
-                if t >= horizon: done = True
-                if done: continue  # if the episode is done, we don't need to update the state values, by convention V(s_terminal) = 0
 
                 # First visit of a state : we remember the instant we saw it.
-                if not next_state in states_was_seen:
-                    states_returns[next_state] = initial_value()     
-                    states_first_time_seen[next_state] = t    
-                    states_was_seen.add(next_state)     
+                if not state in states_was_seen:
+                    states_returns[state] = initial_value()   
+                    states_first_time_seen[state] = t    
+                    states_was_seen.add(state)     
 
                 # Add a discounted reward to the return of each already seen state
                 for state in states_was_seen:
@@ -68,7 +93,17 @@ class MonteCarlo:
 
                 t += 1
                 state = next_state
-                            
+
+                # If s' is a terminal state, we will still take into account the returns of this terminal state (which is 0 by convention) in the computation of V(s')
+                if done: 
+                    if not state in states_was_seen:
+                        states_returns[state] = 0
+                        states_first_time_seen[state] = t    
+                        states_was_seen.add(state) 
+
+                # Horizon : we artificially set the episode as done if the horizon is reached
+                if t >= horizon: done = True    
+
             #Update incrementally the state values
             for state in states_was_seen:
                 #Add 1 to the number of times the state was seen, define N by the way
@@ -80,62 +115,101 @@ class MonteCarlo:
                     nbr_state_seen_in_episode[state] = N + 1
                 #Update the state value
                 G = states_returns[state]
-                state_values[state] = (N/(N+1)) * state_values[state] + (1/(N+1)) * G
+                if averaging_method == "cumulative":
+                    state_values[state] = (N/(N+1)) * state_values[state] + (1/(N+1)) * G
+                elif averaging_method == "moving":
+                    state_values[state] = (1-alpha) * state_values[state] + alpha * G
+                else:
+                    raise ValueError("The averaging method must be either 'cumulative' or 'moving'.")
+            
             num_ep += 1
         
+        if verbose >= 1:
+            print(f"MonteCarlo Prediction of V finished after {num_ep} episodes. State values found : {state_values}")
+            
         return state_values
 
     
 
-    def find_state_values_yielding(self,     policy : DiscretePolicyForDiscreteState,
-                                            env : gym.Env,
-                                            n_episodes : int,
-                                            gamma : float = 0.99,
-                                            method : str = "first_visit", # "first_visit" or "every_visit"
-                                            horizon : int = float("inf"),
-                                ) -> np.ndarray:
+    def find_state_values_yielding(self,  policy : DiscretePolicyForDiscreteState,
+                                env : gym.Env,
+                                n_episodes : int,
+                                gamma : float = 0.99,
+                                visit_method : str = "first_visit", # "first_visit" or "every_visit"
+                                averaging_method : str = "cumulative", # "cumulative" or "moving"
+                                alpha : float = 0.1,
+                                horizon : int = float("inf"),
+                                initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                typical_value : float = 1.,
+                                exploring_starts : bool = False,
+                                is_state_done : Callable = None,
+                                ) -> Iterator:
         """
-        Same as find_state_values but yielding state values at each iteration instead of returning them at the end.
+        Same as find_state_values, but yields the state values at each step.
         """
         assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
         assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
+        assert n_episodes > 0, "The number of episodes must be positive."
+        assert not exploring_starts or is_state_done is not None, "The is_state_done function must be provided if exploring_starts is True."
 
-        state_values = np.zeros(policy.n_states)
+        # Initialize the state values
+        state_values = self.initialize_values(shape = (policy.n_states,),
+                                                initial_values = initial_state_values,
+                                                typical_value = typical_value)
         yield state_values
-        nbr_state_seen_in_episode = np.zeros(policy.n_states)
+        nbr_state_seen_in_episode = dict()
         num_ep = 0
         initial_value = lambda: 0
 
         while num_ep < n_episodes:
-            yield f"Episode {num_ep+1}/{n_episodes}"
-            state = env.reset()
+            yield f"MC Prediction of V - Episode {num_ep}/{n_episodes}"
+
+            # Reset the env.
+            if not exploring_starts:
+                state = env.reset()
+            # If exploring_starts is True, the algorithm will start at a random-non terminal state. This can only be used if you can define correctly a is_don_state(state) function AND if you can set the state of your env using "env.state = the_new_state".
+            else:
+                state_temp = np.random.randint(0, policy.n_states-1)
+                if not is_state_done(state_temp):
+                    state = state_temp
+                    env.state = state_temp
+                else:
+                    state = env.reset()
+
             t = 0
             states_returns = dict()                                       #dict mapping states to returns G = sum(gamma^t * r) of the coming episode
             states_first_time_seen = dict()                               #dict mapping states to the first time they are seen in the coming episode
             states_was_seen = set()                                       #set of seen states in the coming episode
-
-            states_returns[state] = initial_value()     
-            states_first_time_seen[state] = t    
-            states_was_seen.add(state) 
 
             #Run one episode
             done = False
             while not done:
                 action = np.random.choice(policy.n_actions, p=policy.probs[state])
                 next_state, reward, done, _ = env.step(action)
-                if t >= horizon: done = True
-                if done: continue  # if the episode is done, we don't need to update the state values, by convention V(s_terminal) = 0
-                if not next_state in states_was_seen:
-                    states_returns[next_state] = initial_value()     
-                    states_first_time_seen[next_state] = t    
-                    states_was_seen.add(next_state)     
 
+                # First visit of a state : we remember the instant we saw it.
+                if not state in states_was_seen:
+                    states_returns[state] = initial_value()   
+                    states_first_time_seen[state] = t    
+                    states_was_seen.add(state)     
+
+                # Add a discounted reward to the return of each already seen state
                 for state in states_was_seen:
                     states_returns[state] += reward * (gamma ** (t-states_first_time_seen[state]))
 
                 t += 1
                 state = next_state
-                            
+
+                # If s' is a terminal state, we will still take into account the returns of this terminal state (which is 0 by convention) in the computation of V(s')
+                if done: 
+                    if not state in states_was_seen:
+                        states_returns[state] = 0
+                        states_first_time_seen[state] = t    
+                        states_was_seen.add(state) 
+
+                # Horizon : we artificially set the episode as done if the horizon is reached
+                if t >= horizon: done = True    
+
             #Update incrementally the state values
             for state in states_was_seen:
                 #Add 1 to the number of times the state was seen, define N by the way
@@ -147,10 +221,14 @@ class MonteCarlo:
                     nbr_state_seen_in_episode[state] = N + 1
                 #Update the state value
                 G = states_returns[state]
-                state_values[state] = (N/(N+1)) * state_values[state] + (1/(N+1)) * G
+                if averaging_method == "cumulative":
+                    state_values[state] = (N/(N+1)) * state_values[state] + (1/(N+1)) * G
+                elif averaging_method == "moving":
+                    state_values[state] = (1-alpha) * state_values[state] + alpha * G
+                else:
+                    raise ValueError("The averaging method must be either 'cumulative' or 'moving'.")
                 yield state_values
-            num_ep += 1
-            
+            num_ep += 1            
 
 
 
@@ -166,7 +244,8 @@ class MonteCarlo:
                                     typical_value : float = 1,
                                     exploring_starts : bool = False,
                                     exploring_starts_lenght : int = 1, #WIP. This will increase the duration of the explorative policy at the beginning of each episode, thus leading to even more exploration. Slightly off policy and so biased.
-                                    done_states : set = None,
+                                    is_state_done : Callable = None,
+                                    verbose = 1,
                                     ) -> np.ndarray:
             """
             This method perform the MonteCarlo algorithm. It computes an estimation of the action values for a given policy.
@@ -183,27 +262,30 @@ class MonteCarlo:
             initial_action_values : the initial action values. Can be "random", "zeros", "optimistic" or a numpy array.
             typical_value : the typical value of the action values. Used to initialize the action values if initial_action_values is "optimistic".
             exploring_starts : if True, each env will start at a random state and a random action will be played. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
-            done_states : the set of states that are terminal. Used if exploring_starts is True for no initialization in the terminal states. Also set the Q(s_terminal, a) at 0.
+            is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
+            verbose : verbosity level. 0 is silent, 1 is the default
             """
+            if verbose >= 1 : 
+                print(pretty_announcer(f"Start algorithm Monte Carlo Prediction for Q ({visit_method}, {averaging_method}-average).\nExploring starts : {exploring_starts}\nEpisodes : {n_episodes}."))
 
             assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
             assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
             assert n_episodes > 0, "The number of episodes must be strictly positive."
-            assert not exploring_starts or done_states is not None, "If exploring_starts is True, done_states must be a set of terminal states."
+            assert not exploring_starts or is_state_done is not None, "If exploring_starts is True, done_states must be a set of terminal states."
 
             # Initialize the action values
             n_states, n_actions = env.observation_space.n, env.action_space.n
             action_values = self.initialize_values( shape = (n_states, n_actions), 
                                                     initial_values = initial_action_values, 
                                                     typical_value = typical_value)
-            if done_states is not None: # If terminal states are specified, we initialize the action values at 0 for those states
-                action_values[list(done_states), :] = 0
 
             nbr_qstate_seen_in_episode = dict()
             num_ep = 0
             initial_value = lambda: 0
 
             while num_ep < n_episodes:
+                if verbose >= 1 : print(f"MC Prediction of Q - Episode {num_ep}/{n_episodes}")
+
                 state = env.reset()                    
 
                 t = 0
@@ -217,9 +299,10 @@ class MonteCarlo:
                     # We play an action from the policy and define the qstate = (s,a)
                     if not exploring_starts or t >= 1:
                         action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                # If exploring_starts is True, the algorithm will start at a random-non terminal state and play a random action. This can only be used if you can define correctly a is_done_state(state) function AND if you can set the state of your env using "env.state = the_new_state".
                     else:
                         state_temp = np.random.choice(n_states)
-                        if state_temp not in done_states:
+                        if not is_state_done(state_temp):
                             env.state = state_temp
                             state = state_temp
                             action = np.random.choice(n_actions)
@@ -243,10 +326,7 @@ class MonteCarlo:
                     t += 1
                     state = next_state
 
-                    # Horizon : we artificially set the episode as done if a certain number of steps is reached
-                    if t >= horizon: done = True
-
-                    # If s' is a terminal state, we will still take into account the returns of this terminal state with all actions (which is 0 by convention) in the computation of the action values of this terminal state
+                    # If s' is a true terminal state, we will still take into account the returns of this terminal state with all actions (which is 0 by convention) in the computation of the action values of this terminal state
                     if done: 
                         for action in range(n_actions):
                             qstate = Q_State(state, action)
@@ -255,6 +335,8 @@ class MonteCarlo:
                                 qstates_first_time_seen[qstate] = t    
                                 qstates_was_seen.add(qstate)
 
+                    # Horizon : we artificially set the episode as done if a certain number of steps is reached
+                    if t >= horizon: done = True
                                 
                 #Update incrementally the state values
                 for qstate in qstates_was_seen:
@@ -276,6 +358,9 @@ class MonteCarlo:
                         raise ValueError("Unknown averaging method : {}".format(averaging_method))
                 num_ep += 1
             
+            if verbose >= 1:
+                print(f"MonteCarlo Prediction of Q finished after {num_ep} episodes. Action values found : {action_values}")
+
             return action_values
     
 
@@ -290,91 +375,91 @@ class MonteCarlo:
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value = 1,
                                     exploring_starts : bool = False,
-                                    done_states : set = None,
+                                    is_state_done : Callable = None,
                                     ) -> Iterator:
-            """
-            Same as find_action_values, but yields the action values at each step.
-            """
-            assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
-            assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
-            assert n_episodes > 0, "The number of episodes must be strictly positive."
-            assert not exploring_starts or done_states is not None, "If exploring_starts is True, done_states must be a set of terminal states."
+        """
+        Same as find_action_values, but yields the action values at each step.
+        """
+        assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
+        assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
+        assert n_episodes > 0, "The number of episodes must be strictly positive."
+        assert not exploring_starts or is_state_done is not None, "If exploring_starts is True, done_states must be a set of terminal states."
 
-            # Initialize the action values
-            n_states, n_actions = env.observation_space.n, env.action_space.n
-            action_values = self.initialize_values( shape = (n_states, n_actions), 
-                                                    initial_values = initial_action_values, 
-                                                    typical_value = typical_value)
-            if done_states is not None: # If terminal states are specified, we initialize the action values at 0 for those states
-                action_values[list(done_states), :] = 0
+        # Initialize the action values
+        n_states, n_actions = env.observation_space.n, env.action_space.n
+        action_values = self.initialize_values( shape = (n_states, n_actions), 
+                                                initial_values = initial_action_values, 
+                                                typical_value = typical_value)
 
-            yield action_values
-            nbr_qstate_seen_in_episode = dict()
-            num_ep = 0
-            initial_value = lambda: 0
+        yield action_values
+        nbr_qstate_seen_in_episode = dict()
+        num_ep = 0
+        initial_value = lambda: 0
 
-            while num_ep < n_episodes:
-                yield f"MC Prediction {num_ep+1}/{n_episodes}"
-                state = env.reset()
-                t = 0
-                qstates_returns = dict()                                     
-                qstates_first_time_seen = dict()                        
-                qstates_was_seen = set()                                     
+        while num_ep < n_episodes:
+            yield f"MC Prediction of Q - Episode {num_ep+1}/{n_episodes}"
+            state = env.reset()
+            t = 0
+            qstates_returns = dict()                                     
+            qstates_first_time_seen = dict()                        
+            qstates_was_seen = set()                                     
 
-                #Run one episode
-                done = False
-                while not done:
-                    if not exploring_starts or t >= 1:
+            #Run one episode
+            done = False
+            while not done:
+                if not exploring_starts or t >= 1:
+                    action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                else:
+                    state_temp = np.random.choice(n_states)
+                    if not is_state_done(state_temp):
+                        env.state = state_temp
+                        state = state_temp
+                        action = np.random.choice(n_actions)
+                    else:
                         action = np.random.choice(policy.n_actions, p=policy.probs[state])
-                    else:
-                        state_temp = np.random.choice(n_states)
-                        if state_temp not in done_states:
-                            env.state = state_temp
-                            state = state_temp
-                            action = np.random.choice(n_actions)
-                        else:
-                            action = np.random.choice(policy.n_actions, p=policy.probs[state])
-                    qstate = Q_State(state, action)
-                    
-                    if not qstate in qstates_was_seen:
-                        qstates_returns[qstate] = initial_value()     
-                        qstates_first_time_seen[qstate] = t    
-                        qstates_was_seen.add(qstate) 
+                qstate = Q_State(state, action)
+                
+                if not qstate in qstates_was_seen:
+                    qstates_returns[qstate] = initial_value()     
+                    qstates_first_time_seen[qstate] = t    
+                    qstates_was_seen.add(qstate) 
 
-                    next_state, reward, done, _ = env.step(action)
+                next_state, reward, done, _ = env.step(action)
 
-                    for qstate in qstates_was_seen:
-                        qstates_returns[qstate] += reward * (gamma ** (t-qstates_first_time_seen[qstate]))
-
-                    t += 1
-                    state = next_state
-                    if t >= horizon: done = True
-                    if done: 
-                        for action in range(n_actions):
-                            qstate = Q_State(state, action)
-                            if not qstate in qstates_was_seen:
-                                qstates_returns[qstate] = 0    
-                                qstates_first_time_seen[qstate] = t    
-                                qstates_was_seen.add(qstate)
-
-                #Update incrementally the state values
                 for qstate in qstates_was_seen:
-                    if qstate in nbr_qstate_seen_in_episode:
-                        N = nbr_qstate_seen_in_episode[qstate]
-                        nbr_qstate_seen_in_episode[qstate] = N + 1
-                    else: 
-                        N = 0
-                        nbr_qstate_seen_in_episode[qstate] = N + 1
-                    G = qstates_returns[qstate]
-                    state, action = qstate.observation, qstate.action
-                    if averaging_method == "cumulative":
-                        action_values[state][action] = (N/(N+1)) * action_values[state][action] + (1/(N+1)) * G
-                    elif averaging_method == "moving":
-                        action_values[state][action] = (1-alpha) * action_values[state][action] + alpha * G
-                    else:
-                        raise ValueError("Unknown averaging method : {}".format(averaging_method))
-                    yield action_values
-                num_ep += 1
+                    qstates_returns[qstate] += reward * (gamma ** (t-qstates_first_time_seen[qstate]))
+
+                t += 1
+                state = next_state
+                
+                if done: 
+                    for action in range(n_actions):
+                        qstate = Q_State(state, action)
+                        if not qstate in qstates_was_seen:
+                            qstates_returns[qstate] = 0    
+                            qstates_first_time_seen[qstate] = t    
+                            qstates_was_seen.add(qstate)
+                
+                if t >= horizon: done = True
+
+            #Update incrementally the state values
+            for qstate in qstates_was_seen:
+                if qstate in nbr_qstate_seen_in_episode:
+                    N = nbr_qstate_seen_in_episode[qstate]
+                    nbr_qstate_seen_in_episode[qstate] = N + 1
+                else: 
+                    N = 0
+                    nbr_qstate_seen_in_episode[qstate] = N + 1
+                G = qstates_returns[qstate]
+                state, action = qstate.observation, qstate.action
+                if averaging_method == "cumulative":
+                    action_values[state][action] = (N/(N+1)) * action_values[state][action] + (1/(N+1)) * G
+                elif averaging_method == "moving":
+                    action_values[state][action] = (1-alpha) * action_values[state][action] + alpha * G
+                else:
+                    raise ValueError("Unknown averaging method : {}".format(averaging_method))
+                yield action_values
+            num_ep += 1
             
 
     def find_optimal_policy(self,   env : gym.Env,
@@ -390,7 +475,7 @@ class MonteCarlo:
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value : float = 1,
                                     return_action_values : bool = False,
-                                    done_states : set = None,
+                                    is_state_done : Callable = None,
                                     verbose : int = 1,
                                     ) -> Union[DiscretePolicyForDiscreteState, Tuple[DiscretePolicyForDiscreteState, np.ndarray]]:
         """This method perform a MonteCarlo method for the Control Problem.
@@ -409,7 +494,7 @@ class MonteCarlo:
         initial_values : the initial values for the action values ("random", "zeros", "optimistic" or a numpy array)
         typical_value : the typical value for the action values, used for scaling the "random" and "optimistic" value-initialization methods.
         return_action_values : if True, the method returns the action values along  with the policy
-        done_states : the set of states that are terminal for this env, used for the "exploring_starts" method
+        is_state_done : function return whether a state is terminal, used for the "exploring_starts" method
         verbose : the verbosity level
         """
 
@@ -428,7 +513,7 @@ class MonteCarlo:
 
         n_iter = 0
         while True:
-            if verbose >= 1 : print(f"MC Control Iteration {n_iter}/{n_iterations}")
+            if verbose >= 1 : print(f"MC Control - Iteration {n_iter}/{n_iterations}")
             num_episode = n_iter * evaluation_episodes
 
             #Policy improvement
@@ -441,7 +526,7 @@ class MonteCarlo:
             elif exploration_method == "exploring_starts":
                 probs = np.zeros((n_states, n_actions))
                 probs[range(n_states), greedy_actions] = 1
-                assert done_states is not None, "The done_states parameter must be set for the exploring starts method"
+                assert is_state_done is not None, "The is_state_done parameter must be set for the exploring starts method"
             elif exploration_method == "greedy":
                 probs = np.zeros((n_states, n_actions))
                 probs[range(n_states), greedy_actions] = 1
@@ -462,7 +547,9 @@ class MonteCarlo:
                                                     initial_action_values=action_values,
                                                     typical_value=typical_value,
                                                     exploring_starts=exploration_method == "exploring_starts",
-                                                    done_states=done_states,)
+                                                    is_state_done=is_state_done,
+                                                    verbose=1 if verbose>=2 else 0,
+                                                    )
             greedy_actions = np.argmax(action_values, axis=1)
 
             n_iter += 1
@@ -489,7 +576,7 @@ class MonteCarlo:
                                             horizon : int = float("inf"),
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                             typical_value : float = 1,
-                                            done_states : set = None,
+                                            is_state_done : Callable = None,
                                     ) -> Iterator:
         """Same as find_optimal_policy, but yields the action values along with the actions through the training
         """
@@ -508,7 +595,7 @@ class MonteCarlo:
 
         n_iter = 0
         while True:
-            yield f"MC Control {n_iter}/{n_iterations}"
+            yield f"MC Control - Iteration {n_iter}/{n_iterations}"
             num_episode = n_iter * evaluation_episodes
 
             #Policy improvement : policy is defined from the greedy actions which are defined from Q. The policy obtained can be explorative (eps-greedy, UCB) in order to increase exploration.
@@ -521,7 +608,7 @@ class MonteCarlo:
             elif exploration_method == "exploring_starts":
                 probs = np.zeros((n_states, n_actions))
                 probs[range(n_states), greedy_actions] = 1
-                assert done_states is not None, "The done_states parameter must be set for the exploring starts method"
+                assert is_state_done is not None, "The done_states parameter must be set for the exploring starts method"
             elif exploration_method == "greedy":
                 probs = np.zeros((n_states, n_actions))
                 probs[range(n_states), greedy_actions] = 1
@@ -542,7 +629,7 @@ class MonteCarlo:
                                                     initial_action_values=action_values,
                                                     typical_value=typical_value,
                                                     exploring_starts=exploration_method == "exploring_starts",
-                                                    done_states=done_states,):
+                                                    is_state_done=is_state_done,):
                 yield action_values_or_str
             action_values = action_values_or_str.copy()
             greedy_actions = np.argmax(action_values, axis=1)

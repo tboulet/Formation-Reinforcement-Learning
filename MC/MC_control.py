@@ -11,7 +11,7 @@ print("\nFinding optimal policy...")
 optimal_policy, action_values = algo_MC.find_optimal_policy(env = env,
                                                             gamma=.98,
                                                             n_iterations=n_iterations,
-                                                            evaluation_episodes=400,
+                                                            evaluation_episodes=100,
                                                             exploration_method='epsilon_greedy',
                                                             epsilon=.1,
                                                             visit_method="first_visit",
@@ -19,10 +19,10 @@ optimal_policy, action_values = algo_MC.find_optimal_policy(env = env,
                                                             alpha=.1,
                                                             horizon=40,
                                                             return_action_values=True,
-                                                            initial_action_values="optimistic",
+                                                            initial_action_values="random",
                                                             typical_value=-10,
-                                                            verbose=1,
-                                                            done_states={0}
+                                                            is_state_done=lambda state: state == 0,
+                                                            verbose=1,     
                                                             )
 print("Optimal policy's probs:", optimal_policy.probs)
 print("Final action values:", action_values)
@@ -30,8 +30,8 @@ print("Final action values:", action_values)
 print("\Actions and action values during the learning:")
 for elem in algo_MC.find_optimal_policy_yielding(   env = env,
                                                     gamma=.98,
-                                                    n_iterations=n_iterations,
-                                                    evaluation_episodes=20,
+                                                    n_iterations=2,
+                                                    evaluation_episodes=3,
                                                     exploration_method='epsilon_greedy',
                                                     epsilon=.1,
                                                     visit_method="first_visit",
@@ -40,6 +40,6 @@ for elem in algo_MC.find_optimal_policy_yielding(   env = env,
                                                     horizon=40,
                                                     initial_action_values="optimistic",
                                                     typical_value=-10,
-                                                    done_states={0},
+                                                    is_state_done=lambda state: state == 0,
                                                     ):
     print(elem)

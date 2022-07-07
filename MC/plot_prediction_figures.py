@@ -8,7 +8,7 @@ from MC.monteCarlo import MonteCarlo
 from policies import DiscretePolicyForDiscreteState
 
 
-algo_IPE = MonteCarlo()
+algo_MC = MonteCarlo()
 
 n_episodes = 10
 S = np.arange(0,11)
@@ -26,10 +26,19 @@ policy_join_beach = DiscretePolicyForDiscreteState(probs = np.array([[1, 0] for 
 
 
 ### Plot the state values estimated through training
-estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   policy = policy_join_beach,
-                                                                                env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
-                                                                                gamma=0.98)
+estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_join_beach,
+                                                                            env = RiverEnv(),
+                                                                            n_episodes = 40,
+                                                                            gamma=0.98,
+                                                                            visit_method="first_visit",
+                                                                            averaging_method="moving",
+                                                                            alpha=0.1,
+                                                                            horizon=40,
+                                                                            initial_state_values="random",
+                                                                            typical_value = -5,
+                                                                            exploring_starts=False,
+                                                                            is_state_done=lambda state: state == 0,
+                                                                            )
 VS = [e.copy() if type(e) == np.ndarray else e for e in estimated_state_values_during_training]
                                                                          
 
@@ -38,7 +47,6 @@ ax.set_xlim(-1, 11)
 ax.set_ylim(-13, 1)
 ax.set_xlabel("s")
 ax.set_ylabel("V(s)")
-ax.set_title(f"Policy join_beach : Episode 0/{n_episodes}")
 
 
 points, = ax.plot(S, VS[0], ".b", label = "Estimated State Values")
@@ -56,7 +64,7 @@ anim = FuncAnimation(   fig = fig,
                         func = update,
                         repeat = True,
                         frames = np.arange(0, len(VS)),
-                        interval = 100)
+                        interval = 30)
 
 anim.save("figure/MC/v_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = 2)
 plt.show()
@@ -66,10 +74,19 @@ plt.show()
 
 
 ### Plot the action values estimated through training
-estimated_action_values_during_training = algo_IPE.find_action_values_yielding( policy = policy_join_beach,
+estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_join_beach,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
-                                                                                gamma=0.98)
+                                                                                n_episodes = n_episodes * 4,
+                                                                                gamma=0.98,
+                                                                                visit_method="first_visit",
+                                                                                averaging_method="moving",
+                                                                                alpha=0.1,
+                                                                                horizon=40,
+                                                                                initial_action_values="random",
+                                                                                typical_value = -5,
+                                                                                exploring_starts=False,
+                                                                                is_state_done=lambda state: state == 0,
+                                                                                )
 QSA = [e.copy() if type(e) == np.ndarray else e for e in estimated_action_values_during_training]                                                                         
                                                                          
 
@@ -78,7 +95,6 @@ ax.set_xlim(-1, 11)
 ax.set_ylim(-13, 1)
 ax.set_xlabel("s")
 ax.set_ylabel("Q(s, a)")
-ax.set_title(f"Policy join_beach : Episode ~ 0/{n_episodes}")
 
 points_get_closer, = ax.plot(S, QSA[0][:, 0], ".g", label = "Estimated Q(s,a) for a = get_closer_to_beach")
 points_get_far, =    ax.plot(S, QSA[0][:, 1], "xr", label = "Estimated Q(s,a) for a = get_far_from_beach")
@@ -97,7 +113,7 @@ anim = FuncAnimation(   fig = fig,
                         func = update,
                         repeat = True,
                         frames = np.arange(0, len(QSA)),
-                        interval = 100)
+                        interval = 30)
 
 anim.save("figure/MC/q_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = 2)
 plt.show()
@@ -110,11 +126,19 @@ policy_leave_beach = DiscretePolicyForDiscreteState(probs = np.array([[0, 1] for
 ### ====================================================================================================================== ###
 
 ### Plot the state values estimated through training
-estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   policy = policy_leave_beach,
-                                                                                env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
-                                                                                gamma=0.8,
-                                                                                horizon = 30,)
+estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_leave_beach,
+                                                                            env = RiverEnv(),
+                                                                            n_episodes = 40,
+                                                                            gamma=0.98,
+                                                                            visit_method="first_visit",
+                                                                            averaging_method="moving",
+                                                                            alpha=0.1,
+                                                                            horizon=40,
+                                                                            initial_state_values="random",
+                                                                            typical_value = -5,
+                                                                            exploring_starts=False,
+                                                                            is_state_done=lambda state: state == 0,
+                                                                            )
 VS = [e.copy() if type(e) == np.ndarray else e for e in estimated_state_values_during_training]
                                                                          
 
@@ -123,7 +147,6 @@ ax.set_xlim(-1, 11)
 ax.set_ylim(-13, 1)
 ax.set_xlabel("s")
 ax.set_ylabel("V(s)")
-ax.set_title(f"Policy leave_beach : Episode 0/{n_episodes}")
 
 
 points, = ax.plot(S, VS[0], ".b", label = "Estimated State Values")
@@ -140,7 +163,7 @@ anim = FuncAnimation(   fig = fig,
                         func = update,
                         repeat = True,
                         frames = np.arange(0, len(VS)),
-                        interval = 100)
+                        interval = 30)
 
 anim.save("figure/MC/v_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = 2)
 plt.show()
@@ -151,11 +174,19 @@ plt.show()
 
 
 ### Plot the action values estimated through training
-estimated_action_values_during_training = algo_IPE.find_action_values_yielding( policy = policy_leave_beach,
+estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_leave_beach,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
-                                                                                gamma=0.8,
-                                                                                horizon = 30,)
+                                                                                n_episodes = n_episodes * 4,
+                                                                                gamma=0.98,
+                                                                                visit_method="first_visit",
+                                                                                averaging_method="moving",
+                                                                                alpha=0.1,
+                                                                                horizon=40,
+                                                                                initial_action_values="random",
+                                                                                typical_value = -5,
+                                                                                exploring_starts=False,
+                                                                                is_state_done=lambda state: state == 0,
+                                                                                )
 QSA = [e.copy() if type(e) == np.ndarray else e for e in estimated_action_values_during_training]                                                                         
                                                                          
 
@@ -199,10 +230,19 @@ policy_swim_randomly = DiscretePolicyForDiscreteState(probs = np.array([[0.8, 0.
 ### ====================================================================================================================== ###
 
 ### Plot the state values estimated through training
-estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   policy = policy_swim_randomly,
-                                                                                env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
-                                                                                gamma=0.98)
+estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_swim_randomly,
+                                                                            env = RiverEnv(),
+                                                                            n_episodes = 40,
+                                                                            gamma=0.98,
+                                                                            visit_method="first_visit",
+                                                                            averaging_method="moving",
+                                                                            alpha=0.1,
+                                                                            horizon=40,
+                                                                            initial_state_values="random",
+                                                                            typical_value = -5,
+                                                                            exploring_starts=False,
+                                                                            is_state_done=lambda state: state == 0,
+                                                                            )
 VS = [e.copy() if type(e) == np.ndarray else e for e in estimated_state_values_during_training]
                                                                          
 
@@ -211,7 +251,6 @@ ax.set_xlim(-1, 11)
 ax.set_ylim(y_low_lim, 1)
 ax.set_xlabel("s")
 ax.set_ylabel("V(s)")
-ax.set_title(f"Policy swim_randomly : Episode 0/{n_episodes}")
 
 
 points, = ax.plot(S, VS[0], ".b", label = "Estimated State Values")
@@ -228,7 +267,7 @@ anim = FuncAnimation(   fig = fig,
                         func = update,
                         repeat = True,
                         frames = np.arange(0, len(VS)),
-                        interval = 100)
+                        interval = 30)
 
 anim.save("figure/MC/v_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = 2)
 plt.show()
@@ -239,10 +278,19 @@ plt.show()
 
 
 ### Plot the action values estimated through training
-estimated_action_values_during_training = algo_IPE.find_action_values_yielding( policy = policy_swim_randomly,
+estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_swim_randomly,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
-                                                                                gamma=0.98)
+                                                                                n_episodes = n_episodes * 4,
+                                                                                gamma=0.98,
+                                                                                visit_method="first_visit",
+                                                                                averaging_method="moving",
+                                                                                alpha=0.1,
+                                                                                horizon=40,
+                                                                                initial_action_values="optmistic",
+                                                                                typical_value = -5,
+                                                                                exploring_starts=False,
+                                                                                is_state_done=lambda state: state == 0,
+                                                                                )
 QSA = [e.copy() if type(e) == np.ndarray else e for e in estimated_action_values_during_training]                                                                         
                                                                          
 

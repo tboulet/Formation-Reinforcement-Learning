@@ -9,8 +9,8 @@ from policies import DiscretePolicyForDiscreteState
 
 algo_MC = MonteCarlo()
 
-n_iterations = 15
-n_iterations_evaluation = 20
+n_iterations = 10
+n_iterations_evaluation = 50
 S = np.arange(0,11)
 
 
@@ -21,7 +21,7 @@ S = np.arange(0,11)
 
 
 ### ====================================================================================================================== ###
-### ============================================ Greedy ================================================================== ###  
+### ============================================ Eps Greedy ============================================================== ###  
 ### ====================================================================================================================== ###
 
 ### Plot the action values estimated through training
@@ -35,9 +35,9 @@ policies_and_actions = algo_MC.find_optimal_policy_yielding(    env = RiverEnv()
                                                                 averaging_method="moving",
                                                                 alpha=.1,
                                                                 horizon=40,
-                                                                initial_action_values="zeros",
+                                                                initial_action_values="random",
                                                                 typical_value=-10,
-                                                                done_states={0},
+                                                                is_state_done=lambda state: state == 0,
                                                               )
 
 
@@ -50,7 +50,6 @@ ax.set_ylim(-20, bact + 2)
 ax.set_xlabel("s")
 title_control = f"MC Control : 0/{n_iterations}"
 title_prediction = f"MC Prediction : 0/{n_iterations_evaluation}"
-# ax.set_title(title_control + " - " + title_prediction)
 
 actions_join, =ax.plot(S[results[0] == 0], [bact] * (len(S)-np.sum(results[0])), "<g", label = "greedy a")
 actions_leave, =ax.plot(S[results[0] == 1], [bact] * np.sum(results[0]), ">r")
