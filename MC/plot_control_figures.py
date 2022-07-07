@@ -51,7 +51,7 @@ ax.set_xlabel("s")
 title_control = f"MC Control : 0/{n_iterations}"
 title_prediction = f"MC Prediction : 0/{n_iterations_evaluation}"
 
-actions_join, =ax.plot(S[results[0] == 0], [bact] * (len(S)-np.sum(results[0])), "<g", label = "greedy a")
+actions_join, =ax.plot(S[results[0] == 0], [bact] * (len(S)-np.sum(results[0])), "<g")
 actions_leave, =ax.plot(S[results[0] == 1], [bact] * np.sum(results[0]), ">r")
 qvalues_closer, = ax.plot(S, results[1][:, 0], ".g", label = "Q(s,<)")
 qvalues_far,    = ax.plot(S, results[1][:, 1], "xr", label = "Q(s,>)")
