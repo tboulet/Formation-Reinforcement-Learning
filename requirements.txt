@@ -1,4 +1,4 @@
 gym
 numpy
-gradio
 streamlit
+plotly==5.9.0

@@ -143,20 +143,26 @@ class MonteCarlo:
                                 typical_value : float = 1.,
                                 exploring_starts : bool = False,
                                 is_state_done : Callable = None,
+
+                                yield_frequency : str = "step", # "episode" or "step" or "iteration"
+                                **kwargs,
                                 ) -> Iterator:
         """
         Same as find_state_values, but yields the state values at each step.
+
+        yield_frequency : "step" or "episode" or "iteration", the frequency at which the state values are yielded.
         """
         assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
         assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
         assert n_episodes > 0, "The number of episodes must be positive."
         assert not exploring_starts or is_state_done is not None, "The is_state_done function must be provided if exploring_starts is True."
+        assert yield_frequency in ["step", "episode", "iteration"], "The yield_frequency must be either 'step', 'episode' or 'iteration'."
 
         # Initialize the state values
         state_values = self.initialize_values(shape = (policy.n_states,),
                                                 initial_values = initial_state_values,
                                                 typical_value = typical_value)
-        yield state_values
+        if yield_frequency != "iterations" : yield state_values
         nbr_state_seen_in_episode = dict()
         num_ep = 0
         initial_value = lambda: 0
@@ -184,7 +190,10 @@ class MonteCarlo:
             #Run one episode
             done = False
             while not done:
-                action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                try:
+                    action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                except:
+                    raise ValueError("Your policy is likely to be a null-policy : pi(a|s) = 0 always.")
                 next_state, reward, done, _ = env.step(action)
 
                 # First visit of a state : we remember the instant we saw it.
@@ -227,7 +236,8 @@ class MonteCarlo:
                     state_values[state] = (1-alpha) * state_values[state] + alpha * G
                 else:
                     raise ValueError("The averaging method must be either 'cumulative' or 'moving'.")
-                yield state_values
+                if yield_frequency == "step": yield state_values
+            if yield_frequency != "iterations" : yield state_values
             num_ep += 1            
 
 
@@ -376,14 +386,20 @@ class MonteCarlo:
                                     typical_value = 1,
                                     exploring_starts : bool = False,
                                     is_state_done : Callable = None,
+
+                                    yield_frequency : str = "step", # "episode" or "step" or "iteration"
+                                    **kwargs,
                                     ) -> Iterator:
         """
         Same as find_action_values, but yields the action values at each step.
+
+        yield_frequency : "step" or "episode" or "iteration", the frequency at which the state values are yielded.
         """
         assert env.observation_space.n == policy.n_states, "The number of states in the environment must be equal to the number of states in the policy."
         assert env.action_space.n == policy.n_actions, "The number of actions in the environment must be equal to the number of actions in the policy."
         assert n_episodes > 0, "The number of episodes must be strictly positive."
         assert not exploring_starts or is_state_done is not None, "If exploring_starts is True, done_states must be a set of terminal states."
+        assert yield_frequency in ["step", "episode", "iteration"], "The yield_frequency must be either 'step', 'episode' or 'iteration'."
 
         # Initialize the action values
         n_states, n_actions = env.observation_space.n, env.action_space.n
@@ -391,7 +407,7 @@ class MonteCarlo:
                                                 initial_values = initial_action_values, 
                                                 typical_value = typical_value)
 
-        yield action_values
+        if yield_frequency != "iterations" : yield action_values
         nbr_qstate_seen_in_episode = dict()
         num_ep = 0
         initial_value = lambda: 0
@@ -458,7 +474,8 @@ class MonteCarlo:
                     action_values[state][action] = (1-alpha) * action_values[state][action] + alpha * G
                 else:
                     raise ValueError("Unknown averaging method : {}".format(averaging_method))
-                yield action_values
+                if yield_frequency == "step": yield action_values
+            if yield_frequency != "iterations" : yield action_values
             num_ep += 1
             
 
@@ -577,8 +594,12 @@ class MonteCarlo:
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                             typical_value : float = 1,
                                             is_state_done : Callable = None,
+
+                                            yield_frequency : str = "step", # "episode" or "step" or "iteration"
                                     ) -> Iterator:
         """Same as find_optimal_policy, but yields the action values along with the actions through the training
+        
+        yield_frequency : "step" or "episode" or "iteration", the frequency at which the state values are yielded.
         """
         
         assert exploration_method in ["epsilon_greedy", "UCB", "exploring_starts", "greedy"], "Unknown exploration method : {}".format(exploration_method)
@@ -629,7 +650,8 @@ class MonteCarlo:
                                                     initial_action_values=action_values,
                                                     typical_value=typical_value,
                                                     exploring_starts=exploration_method == "exploring_starts",
-                                                    is_state_done=is_state_done,):
+                                                    is_state_done=is_state_done,
+                                                    yield_frequency=yield_frequency,):
                 yield action_values_or_str
             action_values = action_values_or_str.copy()
             greedy_actions = np.argmax(action_values, axis=1)

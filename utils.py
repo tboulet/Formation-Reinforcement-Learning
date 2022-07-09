@@ -4,6 +4,8 @@ class Observation: pass
 class Action: pass
 class Reward: pass
 
+class RL_algorithm: pass
+
 class Q_State:
     """A Q_State is a tuple of (observation, action)"""
     def __init__(self, observation: Observation, action: Action):
