@@ -22,3 +22,6 @@ map_name_to_env = { "RiverEnv": { "Env" : RiverEnv,
                                 
                         }
 
+map_problem_to_algo_names = {   "Prediction Problem" : ["MonteCarlo", "IterativePolicyEvaluation"],
+                                "Control Problem" : ["MonteCarlo", "PolicyIteration", "ValueIteration"],
+                                }

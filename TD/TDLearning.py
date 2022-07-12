@@ -3,7 +3,309 @@ import numpy as np
 import gym
 
 from policies import *
-from utils import Q_State, Scheduler, pretty_announcer
+from utils import *
+
+class TDLearning:
+
+    def find_state_values(self, policy : DiscretePolicyForDiscreteState,
+                                env : gym.Env,
+                                n_episodes : int = float("inf"),
+                                n_steps : int = float("inf"),
+                                gamma : float = 0.99,
+                                alpha : float = 0.1,
+                                horizon : int = float("inf"),
+                                initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                typical_value : float = 1,
+                                exploring_starts : bool = False,
+                                is_state_done : Callable = None,
+                                verbose : int = 1,
+                                    ) -> np.ndarray:
+        """This method performs TD(0) for state values, an online on-policy TD Learning algorithm aiming to estimates the state value.
+        The algorithm stop after a certain number of episodes or steps done.
+
+        policy : the policy to evaluate
+        env : the environment to evaluate the policy on
+        n_episodes : the maximal number of episodes of interaction with the env to perform the algorithm
+        n_steps : the maximal number of steps of interaction with the env to perform the algorithm
+        gamma : the discount factor
+        alpha : the learning rate
+        horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+        initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
+        typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
+        exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
+        is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
+        verbose : the verbosity level. 0 for no output, 1 for output.
+        """
+
+        assert n_episodes != float("inf") or n_steps != float("inf"), "Either n_episodes or n_steps must be specified."
+
+        if verbose >= 1 : 
+            print(pretty_announcer(f"Start algorithm TD(0) for V.\nExploring starts : {exploring_starts}\nFor {n_episodes} episodes or {n_steps} steps."))
+
+        # Initialize the state values
+        state_values = initialize_values(   shape = (policy.n_states,),
+                                            initial_values = initial_state_values,
+                                            typical_value = typical_value)
+        num_episode = 0
+        num_total_step = 0
+
+        while num_episode < n_episodes and num_total_step < n_steps:
+            if verbose >= 1 : print(f"TD(0) Prediction of V - Episode {num_episode}/{n_episodes} - Step {num_total_step}/{n_steps}")
+            # Initialize the state
+            if exploring_starts:
+                state_temp = env.reset()
+                if not is_state_done(state_temp):
+                    state = state_temp
+                    env.state = state
+                else:
+                    state = env.reset()
+            else:
+                state = env.reset()
+
+            # Loop through the episode
+            t = 0
+            done = False
+            while not done and t < horizon and num_total_step < n_steps:
+                # Take action, observe the next state and reward
+                action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                next_state, reward, done, _ = env.step(action)
+                # Update the state values online
+                state_values[state] += alpha * (reward + gamma * state_values[next_state] * (1-done) - state_values[state])               
+                # Horizon : we artificially set the episode as done if the horizon is reached
+                if t >= horizon: done = True
+                # If done, we additonally learn V(s_next) to be 0.
+                state_values[next_state] += alpha * (0 - state_values[next_state])
+
+                state = next_state
+                t += 1
+                num_total_step += 1
+            
+            num_episode += 1
+
+        if verbose >= 1:
+            print(f"TD(0) Prediction of V finished after {num_episode} episodes and {num_total_step} steps. State values found : {state_values}")
+
+        return state_values
+    
+
+
+    def find_state_values_yielding(self,policy : DiscretePolicyForDiscreteState,
+                                        env : gym.Env,
+                                        n_episodes : int = float("inf"),
+                                        n_steps : int = float("inf"),
+                                        gamma : float = 0.99,
+                                        alpha : float = 0.1,
+                                        horizon : int = float("inf"),
+                                        initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                        typical_value : float = 1,
+                                        exploring_starts : bool = False,
+                                        is_state_done : Callable = None,
+                                        yield_frequency : str = "step", # "iteration", "episode", "step"
+                                            ) -> Iterator:
+        """
+        Same as find_state_values, but yields the state values at each step.
+
+        yield_frequency : "step" or "episode" or "iteration", the frequency at which the state values are yielded.
+        """
+
+        assert n_episodes != float("inf") or n_steps != float("inf"), "Either n_episodes or n_steps must be specified."
+        assert yield_frequency in ["step", "episode", "iteration"], "yield_frequency must be 'step', 'episode' or 'iteration'"
+
+        # Initialize the state values
+        state_values = initialize_values(   shape = (policy.n_states,),
+                                            initial_values = initial_state_values,
+                                            typical_value = typical_value)
+        if yield_frequency != "iterations" : yield state_values
+        num_episode = 0
+        num_total_step = 0
+
+        while num_episode < n_episodes and num_total_step < n_steps:
+
+            if exploring_starts:
+                state_temp = env.reset()
+                if not is_state_done(state_temp):
+                    state = state_temp
+                    env.state = state
+                else:
+                    state = env.reset()
+            else:
+                state = env.reset()
+
+            # Loop through the episode
+            t = 0
+            done = False
+            while not done and t < horizon and num_total_step < n_steps:
+                yield f"TD(0) Prediction of V - Episode {num_episode}/{n_episodes} - Step {num_total_step}/{n_steps}"
+                # Take action, observe the next state and reward
+                action = np.random.choice(policy.n_actions, p=policy.probs[state])
+                next_state, reward, done, _ = env.step(action)
+                # Update the state values online
+                state_values[state] += alpha * (reward + gamma * state_values[next_state] * (1-done) - state_values[state])
+                if yield_frequency == "step": yield state_values                 
+                # Horizon : we artificially set the episode as done if the horizon is reached
+                if t >= horizon: done = True
+                # If done, we additonally learn V(s_next) to be 0.
+                state_values[next_state] += alpha * (0 - state_values[next_state])
+
+                state = next_state
+                t += 1
+                num_total_step += 1
+
+            if yield_frequency == "episode": yield state_values
+            num_episode += 1
+        if yield_frequency == "iteration": yield state_values
+
+
+
+    def find_action_values(self,policy : DiscretePolicyForDiscreteState,
+                                env : gym.Env,
+                                n_episodes : int = float("inf"),
+                                n_steps : int = float("inf"),
+                                gamma : float = 0.99,
+                                alpha : float = 0.1,
+                                horizon : int = float("inf"),
+                                initial_action_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                typical_value : float = 1,
+                                exploring_starts : bool = False,
+                                is_state_done : Callable = None,
+                                verbose : int = 1,
+                                    ) -> np.ndarray:
+        """This method performs SARSA for action values, an online on-policy TD Learning algorithm aiming to estimates the action value.
+        The algorithm stop after a certain number of episodes or steps done.
+
+        policy : the policy to evaluate
+        env : the environment to evaluate the policy on
+        n_episodes : the maximal number of episodes of interaction with the env to perform the algorithm
+        n_steps : the maximal number of steps of interaction with the env to perform the algorithm
+        gamma : the discount factor
+        alpha : the learning rate
+        horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+        initial_action_values : the initial values of the action values. Can be "random", "zeros", "optimistic" or a numpy array.
+        typical_value : the typical value of the action values. Used to initialize the action values if initial_action_values is "random".
+        exploring_starts : if True, the algorithm will start at a random-non terminal qstate. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
+        is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
+        verbose : the verbosity level. 0 for no output, 1 for output.
+        """
+
+        assert n_episodes != float("inf") or n_steps != float("inf"), "Either n_episodes or n_steps must be specified."
+        assert not exploring_starts or is_state_done is not None, "is_state_done must be specified if exploring_starts is True."
+
+        if verbose >= 1 : 
+            print(pretty_announcer(f"Start algorithm SARSA for Q.\nExploring starts : {exploring_starts}\nFor {n_episodes} episodes or {n_steps} steps."))
+
+        # Initialize the state values
+        action_values = initialize_values(  shape = (policy.n_states, policy.n_actions),
+                                            initial_values = initial_action_values,
+                                            typical_value = typical_value)
+        num_episode = 0
+        num_total_step = 0
+        state = env.reset()
+
+        while num_episode < n_episodes and num_total_step < n_steps:
+            if verbose >= 1 : print(f"SARSA Prediction of Q - Episode {num_episode}/{n_episodes} - Step {num_total_step}/{n_steps}")
+            # Initialize the qstate
+            state = env.reset()
+            action = np.random.choice(policy.n_actions, p=policy.probs[state])
+            qstate = Q_State(state, action)
+
+            # Loop through the episode
+            t = 0
+            done = False
+            while not done and t < horizon and num_total_step < n_steps:
+                # Take action, observe the next state and reward
+                if not exploring_starts or t>=1:
+                    next_state, reward, done, _ = env.step(action)
+                    next_action = np.random.choice(policy.n_actions, p=policy.probs[next_state])
+                    next_qstate = Q_State(next_state, next_action)
+                else:
+                    pass
+                # Update the action values online
+                action_values[state][action] += alpha * (reward + gamma * action_values[next_state][next_action] * (1-done) - action_values[state][action])             
+                # Horizon : we artificially set the episode as done if the horizon is reached
+                if t >= horizon: done = True
+                # If done, we additonally learn Q(s_next, a_next) to be 0.
+                if done:
+                    action_values[next_state][next_action] += alpha * (0 - action_values[next_state][next_action])  
+
+                state = next_state
+                action = next_action
+                t += 1
+                num_total_step += 1
+            
+            num_episode += 1
+
+        if verbose >= 1:
+            print(f"SARSA Prediction of Q finished after {num_episode} episodes and {num_total_step} steps. Action values found : {action_values}")
+
+        return action_values
+
+
+
+    def find_action_values_yielding(self,   policy : DiscretePolicyForDiscreteState,
+                                            env : gym.Env,
+                                            n_episodes : int = float("inf"),
+                                            n_steps : int = float("inf"),
+                                            gamma : float = 0.99,
+                                            alpha : float = 0.1,
+                                            horizon : int = float("inf"),
+                                            initial_action_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                            typical_value : float = 1,
+                                            exploring_starts : bool = False,
+                                            is_state_done : Callable = None,
+                                            yield_frequency : str = "step",
+                                                ) -> Iterator:
+        """
+        Same as find_action_values, but yields the action values at each step.
+
+        yield_frequency : "step" or "episode" or "iteration", the frequency at which the action values are yielded.
+        """
+
+        assert n_episodes != float("inf") or n_steps != float("inf"), "Either n_episodes or n_steps must be specified."
+        assert not exploring_starts or is_state_done is not None, "is_state_done must be specified if exploring_starts is True."
+
+        # Initialize the state values
+        action_values = initialize_values(  shape = (policy.n_states, policy.n_actions),
+                                            initial_values = initial_action_values,
+                                            typical_value = typical_value)
+        if yield_frequency != "iterations" : yield action_values
+        num_episode = 0
+        num_total_step = 0
+        state = env.reset()
+
+        while num_episode < n_episodes and num_total_step < n_steps:
+            # Initialize the qstate
+            state = env.reset()
+            action = np.random.choice(policy.n_actions, p=policy.probs[state])
+            # Loop through the episode
+            t = 0
+            done = False
+            while not done and t < horizon and num_total_step < n_steps:
+                yield f"SARSA Prediction of Q - Episode {num_episode}/{n_episodes} - Step {num_total_step}/{n_steps}"
+                # Take action, observe the next state and reward
+                if not exploring_starts or t>=1:
+                    next_state, reward, done, _ = env.step(action)
+                    next_action = np.random.choice(policy.n_actions, p=policy.probs[next_state])
+                else:
+                    pass
+                # Update the action values online
+                action_values[state][action] += alpha * (reward + gamma * action_values[next_state][next_action] * (1-done) - action_values[state][action])  
+                if yield_frequency == "step": yield action_values           
+                # Horizon : we artificially set the episode as done if the horizon is reached
+                if t >= horizon: done = True
+                # If done, we additonally learn Q(s_next, a_next) to be 0.
+                if done:
+                    action_values[next_state][next_action] += alpha * (0 - action_values[next_state][next_action])  
+
+                state = next_state
+                action = next_action
+                t += 1
+                num_total_step += 1
+            
+            if yield_frequency == "episode": yield action_values
+            num_episode += 1
+        if yield_frequency == "iteration": yield action_values
+
+
 
 class MonteCarlo:
 
@@ -22,21 +324,7 @@ class MonteCarlo:
                                 verbose : int = 1,
                                 ) -> np.ndarray:
         """
-        This method perform the MonteCarlo algorithm. It computes an estimation of the state values for a given policy.
-        The algorithm stop after a certain number of iterations.
-
-        policy : the policy to evaluate
-        env : the environment to evaluate the policy on
-        n_episodes : the number of episodes of interaction with the env to perform the algorithm
-        gamma : the discount factor
-        visit_method : the method to use to update the state values, currently only "first_visit" is supported
-        averaging_method : the method to use to update the action values. Cumulative is to "tend to" V, while moving is to permanently "track" V. Use the latest for non stationary env.
-        alpha : the learning rate
-        horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
-        initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
-        typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
-        exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
-        is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
+ a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
         """
 
         if verbose >= 1 : 
@@ -238,8 +526,7 @@ class MonteCarlo:
                     raise ValueError("The averaging method must be either 'cumulative' or 'moving'.")
                 if yield_frequency == "step": yield state_values
             if yield_frequency == "episode" : yield state_values
-            num_ep += 1      
-        if yield_frequency == "iteration" : yield state_values      
+            num_ep += 1            
 
 
 

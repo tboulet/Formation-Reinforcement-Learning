@@ -7,8 +7,13 @@ from utils import *
 def run_rl_algorithm(**config):
     """Run an algorithm and display result on streamlit.
     """
-    st.subheader("Results of training:")
-    config["yield_frequency"] = st.selectbox("Display a frame each... (higher frequency slow down displaying)", ["step", "episode", "iteration"], index=1)
+    st.header("Results of training:")
+    if config["family"] in ["TD", "MC"]:
+        config["yield_frequency"] = st.selectbox("Display a frame each... (higher frequency slow down displaying)", ["step", "episode", "iteration"], index=1)
+    elif config["family"] == "DP":
+        config["yield_frequency"] = st.selectbox("Display a frame each... (higher frequency slow down displaying)", ["step", "iteration", "global_iteration"], index=1)
+    else:
+        raise ValueError("Unknown family: {}".format(config["family"]))
 
     # Generate for the good problem with the good algo and for the specified config
     algo = config["algo"]
@@ -28,28 +33,48 @@ def run_rl_algorithm(**config):
 
     #Treat this data
     title = "Algo starting"
+    title_control = ""
+    title_prediction = ""
+
     num_frame = 0
     frame_titles = dict()
     datas_list = list()
     env = config["env"]
     n_states, n_actions = env.observation_space.n, env.action_space.n
+    
+    greedy_actions = None
+    y_greedy_actions = 4
     for data in datas:
+        # If the data is a string, modify the title of the next frames.
         if type(data) == str:
-            title = data
-        elif type(data) == np.ndarray:
-            frame_titles[num_frame] = title
+            if "Prediction" in data:
+                title_prediction = data
+            elif "Control" in data:
+                title_control = data
+            title = title_control + " | " + title_prediction
 
+        # If the data is an array, it can either be a Q(s,a), V(s) or greedy_actions(s). We are building a new frame.
+        elif type(data) == np.ndarray:
+            # Save the title of the frame. We will apply this title later.
+            frame_titles[num_frame] = title
+            # Add plot of actions.
+            if greedy_actions is not None:
+                datas_list_for_actions = list()
+                for state in range(n_states):
+                    datas_list.append([num_frame, state, greedy_actions[state], y_greedy_actions])
+            # Add plot of Q values
             if len(data.shape) == 2:    # Q values
                 for state in range(n_states):
                     for action in range(n_actions):
                         datas_list.append([num_frame, state, action, data[state, action]])
+            # Add plot of V values or update greedy_actions
             elif len(data.shape) == 1:  # 
                 if problem == "Prediction Problem": #V values
                     for state in range(n_states):
                         datas_list.append([num_frame, state, -1, data[state]])
                 elif problem == "Control Problem": # greedy actions
-                    for state in range(n_states):
-                        datas_list.append([num_frame, state, data[state],  data[state]])
+                    greedy_actions = data
+
             else: 
                 raise ValueError("data must be either a string or a numpy array")
             num_frame += 1
@@ -57,13 +82,17 @@ def run_rl_algorithm(**config):
     df = pd.DataFrame(datas_list, columns=["frame", "state", "action", "values"])
     fig = px.scatter(df,    x = "state", 
                             y = "values", 
-                            color = "action" if values_type == "Action values Q" else None, 
+                            color = "action", # if values_type == "Action values Q" else None, 
                             animation_frame="frame",
-                            range_x=[-1, 11], range_y=[-15, 5])
+                            range_x=[-1, 11], range_y=[-20, 5])
+
     #This is for animated title for an animation (only way kekw)
+    if len(fig.layout.updatemenus) == 0: raise ValueError("'Global iteration' doesn't make sense for this algorithm. Please use 'step' or 'iteration'.")
     for button in fig.layout.updatemenus[0].buttons:
         button['args'][1]['frame']['redraw'] = True
     for k in range(len(fig.frames)):
         fig.frames[k]['layout'].update(title_text=frame_titles[k])
     
     st.plotly_chart(fig)
+    if greedy_actions is not None:
+        st.write("The points that stays at y=4 represents the greedy action. They are those chosen by the agent in the case of a greedy policy.")

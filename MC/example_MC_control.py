@@ -27,7 +27,7 @@ optimal_policy, action_values = algo_MC.find_optimal_policy(env = env,
 print("Optimal policy's probs:", optimal_policy.probs)
 print("Final action values:", action_values)
 
-print("\Actions and action values during the learning:")
+print("\nActions and action values during the learning:")
 for elem in algo_MC.find_optimal_policy_yielding(   env = env,
                                                     gamma=.98,
                                                     n_iterations=2,
@@ -41,5 +41,6 @@ for elem in algo_MC.find_optimal_policy_yielding(   env = env,
                                                     initial_action_values="optimistic",
                                                     typical_value=-10,
                                                     is_state_done=lambda state: state == 0,
+                                                    yield_frequency="episode",
                                                     ):
     print(elem)

@@ -3,27 +3,33 @@ from typing import Iterator, Tuple, Union
 import numpy as np
 
 from policies import *
+from utils import * 
 
 class IterativePolicyEvaluation:
 
     def find_state_values(self,  policy : DiscretePolicyForDiscreteState, 
                                 transition_probability : np.ndarray,
                                 reward_probability : np.ndarray,
-                                gamma : float = 1,
                                 n_iterations : int = None, 
                                 maximal_error : float = None,
+                                gamma : float = 1,
                                 sweep_order : str = "normal", # "normal" or "reverse" or "random"
+                                initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                typical_value : float = 1,
                                 verbose = 1,
+                                **kwargs,
                                 ) -> np.ndarray:
         """This method perform the IterativePolicyEvaluation algorithm. It computes an estimation of the state values for a given policy, in a given model (transition_probability and reward_probability).
         The algorithm stop either after a given number of iterations or when the worst error (among the states) between two V(s) estimation consecutive is below a given threshold.
         
         transition_probability : a numpy array of shape (n_states, n_actions, n_states) representing the transition probability between states.
         reward_probability : a numpy array of shape (n_states, n_actions) representing the reward probability for each action in each state.
-        gamma : the discount factor.
         n_iterations : the number of iterations to perform.
         maximal_error : the error between 2 consecutives state value below what the algorithm will stop, considering that it has converged.
+        gamma : the discount factor.
         sweep_order : the order in which we will iterate over the states. "normal" or "reverse" or "random". This can have a significant impact on the convergence of the algorithm.
+        initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
+        typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
         verbose : the verbosity level, 0 for no output, 1 for an end output.
         """
 
@@ -38,7 +44,9 @@ class IterativePolicyEvaluation:
             np.random.shuffle(states_sweep)
 
         # Initialize the state values   
-        state_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states,))
+        state_values = initialize_values(   shape = (n_states,),
+                                            initial_values=initial_state_values,
+                                            typical_value=typical_value)
         n_iter = 0
         keep_iterating = True
 
@@ -81,15 +89,21 @@ class IterativePolicyEvaluation:
 
 
     
-    def find_state_values_yielding(self,  policy : DiscretePolicyForDiscreteState,
+    def find_state_values_yielding(self,  policy : DiscretePolicyForDiscreteState, 
                                 transition_probability : np.ndarray,
                                 reward_probability : np.ndarray,
                                 n_iterations : int = None, 
                                 maximal_error : float = None,
                                 gamma : float = 1,
-                                sweep_order : str = "random", # "normal" or "reverse" or "random"
-                                ) -> np.ndarray:
+                                sweep_order : str = "normal", # "normal" or "reverse" or "random"
+                                initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
+                                typical_value : float = 1,
+                                yield_frequency : str = "step", # "step" or "iteration"
+                                **kwargs,
+                                ) -> Iterator:
         """This function is the same as find_state_values, but it yields the state values at each iteration. Use for observe the convergence of the algorithm.
+
+        yield_frequency : "step" or "iteration", the frequency at which the state values are yielded.
         """
 
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
@@ -101,25 +115,28 @@ class IterativePolicyEvaluation:
         elif sweep_order == "random":
             np.random.shuffle(states_sweep)
 
-        state_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states,))
-        yield state_values
+        state_values = initialize_values(   shape = (n_states,),
+                                            initial_values=initial_state_values,
+                                            typical_value=typical_value)
+        if yield_frequency != "global_iteration": yield state_values
         n_iter = 0
         keep_iterating = True
 
         while keep_iterating:
             worst_error = 0
-            yield f"IPE Iteration {n_iter} :"
+            yield f"DP Prediction of V (IPE) - Iteration {n_iter} :"
             for state in states_sweep:
                 value = state_values[state]
                 state_values[state] = self.compute_state_value(state, policy, transition_probability, reward_probability, state_values, gamma)
                 worst_error = max(worst_error, abs(value - state_values[state]))
-                yield state_values
+                if yield_frequency == "step" : yield state_values
             n_iter += 1
             if n_iterations != None and n_iter >= n_iterations:
                 keep_iterating = False
             elif maximal_error != None and worst_error <= maximal_error:
                 keep_iterating = False
-
+            if yield_frequency == "iteration": yield state_values
+        if yield_frequency == "global_iteration" : yield state_values
 
     
 
@@ -129,13 +146,25 @@ class IterativePolicyEvaluation:
                                     n_iterations : int = None, 
                                     maximal_error : float = None,
                                     gamma : float = 1,
-                                    verbose = 1,
                                     sweep_order : str = "random", # "normal" or "reverse" or "random"
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
+                                    typical_value : float = 1,
+                                    verbose = 1,
+                                    **kwargs,
                                     ) -> np.ndarray:
         
         """This method perform the IterativePolicyEvaluation algorithm. It computes an estimation of the action values for a given policy, in a given model (transition_probability and reward_probability).
         The algorithm stop either after a given number of iterations or when the worst error (among the states+actions) between two Q(s,a) estimation consecutive is below a given threshold.
+        
+        transition_probability : a numpy array of shape (n_states, n_actions, n_states) representing the transition probability between states.
+        reward_probability : a numpy array of shape (n_states, n_actions) representing the reward probability for each action in each state.
+        n_iterations : the number of iterations to perform.
+        maximal_error : the error between 2 consecutives state value below what the algorithm will stop, considering that it has converged.
+        gamma : the discount factor.
+        sweep_order : the order in which we will iterate over the states. "normal" or "reverse" or "random". This can have a significant impact on the convergence of the algorithm.
+        initial_action_values : the initial values of the action values. Can be "random", "zeros", "optimistic" or a numpy array.
+        typical_value : the typical value of the action values. Used to initialize the action values if initial_action_values is "random".
+        verbose : the verbosity level, 0 for no output, 1 for an end output.
         """
         
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
@@ -149,21 +178,9 @@ class IterativePolicyEvaluation:
             np.random.shuffle(states_sweep)
 
         # Initialize the action values
-        if type(initial_action_values) == str:
-            if initial_action_values == "random":
-                q_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states, n_actions))
-            elif initial_action_values == "zeros":
-                q_values = np.zeros((n_states, n_actions))
-            elif initial_action_values == "optimistic":         # Optimistic initialization is a trick that consist to overestimate the action values initially. This increase exploration for the greedy algorithm.
-                worst_reward = np.min(reward_probability)
-                best_reward = np.max(reward_probability)
-                q_values = np.ones((n_states, n_actions)) * (best_reward + 2 * (best_reward - worst_reward))   # An order of the magnitude of the reward is used to initialize optimistically the action values.
-            else:
-                raise ValueError("The initial action values must be either 'random', 'zeros', 'optimistic' or a numpy array.")
-        elif isinstance(initial_action_values, np.ndarray):
-            q_values = initial_action_values
-        else:
-            raise ValueError("The initial action values must be either 'random', 'zeros', 'optimistic' or a numpy array.")
+        action_values = initialize_values(  shape = (n_states, n_actions), 
+                                            initial_values = initial_action_values, 
+                                            typical_value = typical_value)
         n_iter = 0
         keep_iterating = True
 
@@ -172,9 +189,9 @@ class IterativePolicyEvaluation:
             # Iterate over the states and actions, update actions values value in an in-place manner (using only one array).
             for state in states_sweep:
                 for action in range(n_actions):
-                    value = q_values[state][action]
-                    q_values[state][action] = self.compute_action_value(state, action, policy, transition_probability, reward_probability, q_values, gamma)
-                    worst_error = max(worst_error, abs(value - q_values[state][action]))
+                    value = action_values[state][action]
+                    action_values[state][action] = self.compute_action_value(state, action, policy, transition_probability, reward_probability, action_values, gamma)
+                    worst_error = max(worst_error, abs(value - action_values[state][action]))
             # Stop algorithm if we reached the maximum number of iterations or if the error is below the threshold
             n_iter += 1
             if n_iterations != None and n_iter >= n_iterations:
@@ -184,7 +201,7 @@ class IterativePolicyEvaluation:
                 keep_iterating = False
                 if verbose >= 1: print("The algorithm stopped after {} iterations. Stop condition : worst error ({}) inferior to the maximal error asked ({})".format(n_iter, worst_error, maximal_error))
 
-        return q_values
+        return action_values
 
     
     def compute_action_value(self,  state : int, 
@@ -212,9 +229,14 @@ class IterativePolicyEvaluation:
                                             gamma : float = 1,
                                             sweep_order : str = "random", # "normal" or "reverse" or "random"
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
-                                            ) -> np.ndarray:
+                                            typical_value : float = 1,
+                                            yield_frequency : str = "step", # "step" or "iteration"
+                                            **kwargs,
+                                            ) -> Iterator:
         
         """This function is the same as find_action_values, but it yields the action values at each iteration. Use for observe the convergence of the algorithm.
+
+        yield_frequency : "step" or "iteration", the frequency at which the action values are yielded.
         """
 
         assert n_iterations != None or maximal_error != None, "The stop condition is not well defined. Please specify either n_iterations or maximal_error."
@@ -226,39 +248,29 @@ class IterativePolicyEvaluation:
         elif sweep_order == "random":
             np.random.shuffle(states_sweep)
 
-        if type(initial_action_values) == str:
-            if initial_action_values == "random":
-                q_values = np.random.normal(loc = 0, scale = 2 * np.max(np.abs(reward_probability)), size = (n_states, n_actions))
-            elif initial_action_values == "zeros":
-                q_values = np.zeros((n_states, n_actions))
-            elif initial_action_values == "optimistic":         # Optimistic initialization is a trick that consist to overestimate the action values initially. This increase exploration for the greedy algorithm.
-                worst_reward = np.min(reward_probability)
-                best_reward = np.max(reward_probability)
-                q_values = np.ones((n_states, n_actions)) * (best_reward + 2 * (best_reward - worst_reward))   # An order of the magnitude of the reward is used to initialize optimistically the action values.
-            else:
-                raise ValueError("The initial action values must be either 'random', 'zeros', 'optimistic' or a numpy array.")
-        elif isinstance(initial_action_values, np.ndarray):
-            q_values = initial_action_values
-        else:
-            raise ValueError("The initial action values must be either 'random', 'zeros', 'optimistic' or a numpy array.")
-        yield q_values
+        action_values = initialize_values(  shape = (n_states, n_actions), 
+                                            initial_values = initial_action_values, 
+                                            typical_value = typical_value)
+        if yield_frequency != "global_iteration": yield action_values
         n_iter = 0
         keep_iterating = True
 
         while keep_iterating:
             worst_error = 0
-            yield f"IPE Iteration {n_iter} :"
+            yield f"DP Prediction of Q (IPE) - Iteration {n_iter} :"
             for state in states_sweep:
                 for action in range(n_actions):
-                    value = q_values[state][action]
-                    q_values[state][action] = self.compute_action_value(state, action, policy, transition_probability, reward_probability, q_values, gamma)
-                    worst_error = max(worst_error, abs(value - q_values[state][action]))
-                    yield q_values
+                    value = action_values[state][action]
+                    action_values[state][action] = self.compute_action_value(state, action, policy, transition_probability, reward_probability, action_values, gamma)
+                    worst_error = max(worst_error, abs(value - action_values[state][action]))
+                    if yield_frequency == "step" : yield action_values
             n_iter += 1
             if n_iterations != None and n_iter >= n_iterations:
                 keep_iterating = False
             elif maximal_error != None and worst_error <= maximal_error:
                 keep_iterating = False
+            if yield_frequency == "iteration": yield action_values
+        if yield_frequency == "global_iteration" : yield action_values
 
 
 
@@ -266,24 +278,29 @@ class PolicyIteration:
 
     def find_optimal_policy(self,   transition_probability : np.ndarray,
                                     reward_probability : np.ndarray,
-                                    gamma : float = 1,
+                                    n_iterations : int = float("inf"),
                                     IPE_n_iterations : int = None, 
                                     IPE_maximal_error : float = None,
-                                    n_iterations : int = float("inf"),
+                                    gamma : float = 1,
+                                    sweep_order : str = "normal", # "normal" or "reverse" or "random"
+                                    initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
+                                    typical_value : float = 1,
                                     return_action_values : bool = False,
                                     verbose : int = 1,
-                                    ) -> Union[ DiscretePolicyForDiscreteState, 
-                                                Tuple[DiscretePolicyForDiscreteState, np.ndarray, np.ndarray]]:
+                                    ) -> DiscretePolicyForDiscreteState :
 
         """This method performs the Policy Iteration algorithm. It computes an optimal policy for a given model (transition_probability and reward_probability).
         The algorithm stop either when the policy is stable (no change in the policy) or when the number of iterations is reached.
 
         transition_probability : a numpy array of shape (n_states, n_actions, n_states) representing the transition probability between states and actions.
         reward_probability : a numpy array of shape (n_states, n_actions) representing the reward expected for each state and action.
-        gamma : the discount factor
+        n_iterations : the number of iterations for the policy iteration algorithm.
         IPE_n_iterations : the number of iterations for the IPE algorithm.
         IPE_maximal_error : the maximal error allowed for the IPE algorithm.
-        n_iterations : the number of iterations for the policy iteration algorithm.
+        gamma : the discount factor
+        sweep_order : the order in which we will iterate over the states. "normal" or "reverse" or "random". This can have a significant impact on the convergence of the algorithm.
+        initial_values : the initial values for the action values ("random", "zeros", "optimistic" or a numpy array)
+        typical_value : the typical value for the action values, used for scaling the "random" and "optimistic" value-initialization methods.
         return_action_values : if True, the action values are returned with the policy
         verbose : the verbosity level. 0 : no print, 1 : print when PI has finished.
         """
@@ -294,7 +311,9 @@ class PolicyIteration:
 
         n_states, n_actions = reward_probability.shape
         actions = np.random.choice(np.array([a for a in range(n_actions)]), size = n_states,)
-        action_values = "random"
+        action_values = initialize_values( shape = (n_states, n_actions), 
+                                                    initial_values = initial_action_values, 
+                                                    typical_value = typical_value)
         algo_IPE = IterativePolicyEvaluation()
 
         n_iter = 0
@@ -304,13 +323,17 @@ class PolicyIteration:
             probs = np.zeros((n_states, n_actions))         # convert deterministic actions to stochastic policy
             probs[np.arange(n_states), actions] = 1
             policy = DiscretePolicyForDiscreteState(probs)
-            action_values = algo_IPE.find_action_values(policy, transition_probability, reward_probability,                                     #Evaluate the policy
-                                                                                                        n_iterations = IPE_n_iterations,        #Convergence criteria for the IPE
-                                                                                                        maximal_error = IPE_maximal_error,
-                                                                                                        gamma = gamma,
-                                                                                                        verbose = 0,                            #Silence the IPE method
-                                                                                                        initial_action_values = action_values,  #Initialize the IPE with the previous action values computed, increase convergence a bit
-                                                                                                        )
+            action_values = algo_IPE.find_action_values(policy,                                 #Evaluate the policy
+                                                        transition_probability, 
+                                                        reward_probability,                                    
+                                                        n_iterations = IPE_n_iterations,        #Convergence criteria for the IPE
+                                                        maximal_error = IPE_maximal_error,
+                                                        gamma = gamma,
+                                                        sweep_order=sweep_order,
+
+                                                        initial_action_values = action_values,  #Initialize the IPE with the previous action values computed, increase convergence a bit
+                                                        verbose = 0,                            #Silence the IPE method
+                                                        )
             #Policy improvement
             actions_old = actions.copy()
             for state in range(n_states):
@@ -333,15 +356,22 @@ class PolicyIteration:
     
     
 
-    def find_optimal_policy_yielding(self,   transition_probability : np.ndarray,
-                                    reward_probability : np.ndarray,
-                                    gamma : float = 1,
-                                    IPE_n_iterations : int = None, 
-                                    IPE_maximal_error : float = None,
-                                    n_iterations : int = float("inf"),
-                                    ) -> Iterator:
+    def find_optimal_policy_yielding(self,  transition_probability : np.ndarray,
+                                            reward_probability : np.ndarray,
+                                            IPE_n_iterations : int = None, 
+                                            IPE_maximal_error : float = None,
+                                            n_iterations : int = float("inf"),
+                                            gamma : float = 1,
+                                            sweep_order : str = "normal", # "normal" or "reverse" or "random"
+                                            initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
+                                            typical_value : float = 1,
+                                            yield_frequency : str = "step", # "step", "iteration" or "global_iteration"
+                                            **kwargs,
+                                            ) -> Iterator:
 
-        """This method performs the Policy Iteration algorithm as find_optimal_policy but yield pi(s) (the actions) and Q(s,a).
+        """This function is the same as find_optimal_policy, but it yields the actions and action values at each iteration. Use for observe the convergence of the algorithm.
+
+        yield_frequency : "step" or "iteration", the frequency at which the state values are yielded.
         """
         assert n_iterations >= 1, "The number of iterations must be strictly positive."
 
@@ -350,42 +380,42 @@ class PolicyIteration:
 
         n_states, n_actions = reward_probability.shape
         actions = np.random.choice(np.array([a for a in range(n_actions)]), size = n_states,)
-
+        action_values = initialize_values( shape = (n_states, n_actions), 
+                                                    initial_values = initial_action_values, 
+                                                    typical_value = typical_value)
+        yield actions
+        yield action_values
         algo_IPE = IterativePolicyEvaluation()
 
         n_iter = 0
         while n_iter < n_iterations:
-            yield "PI Iteration {} :".format(n_iter)
-            yield actions
-
-            #Define initial actions values as those of the previous IPE output
-            try:
-                initial_action_values = action_values
-            except NameError:
-                initial_action_values = "random"
-
+            yield f"DP Control (PI or VI) - Iteration {n_iter}"
             #Iterative Policy Evaluation
             probs = np.zeros((n_states, n_actions))         # convert deterministic actions to stochastic policy
             probs[np.arange(n_states), actions] = 1
             policy = DiscretePolicyForDiscreteState(probs)
-            results_IPE = algo_IPE.find_action_values_yielding(policy, transition_probability, reward_probability, 
-                                                                                                        n_iterations = IPE_n_iterations, 
-                                                                                                        maximal_error = IPE_maximal_error,
-                                                                                                        gamma = gamma,
-                                                                                                        initial_action_values = initial_action_values)
-            for action_values in results_IPE:
-                yield action_values
+            for action_values_or_str in algo_IPE.find_action_values_yielding(   policy,                                 #Evaluate the policy
+                                                                    transition_probability, 
+                                                                    reward_probability,                                    
+                                                                    n_iterations = IPE_n_iterations,        #Convergence criteria for the IPE
+                                                                    maximal_error = IPE_maximal_error,
+                                                                    gamma = gamma,
+                                                                    sweep_order=sweep_order,
 
+                                                                    initial_action_values = action_values,  #Initialize the IPE with the previous action values computed, increase convergence a bit
+                                                                    yield_frequency=yield_frequency,
+                                                                    ):
+                yield action_values_or_str
             #Policy improvement
             actions_old = actions.copy()
             for state in range(n_states):
                 actions[state] = np.argmax(action_values[state])
-                yield actions
-            
+            yield actions
+            yield action_values
             n_iter += 1
             if (actions == actions_old).all():
-                return
-
+                break
+        
 
 
 class ValueIteration(PolicyIteration):
@@ -394,26 +424,35 @@ class ValueIteration(PolicyIteration):
 
     def find_optimal_policy(self,   transition_probability : np.ndarray,
                                     reward_probability : np.ndarray,
-                                    gamma : float = 1,
                                     n_iterations : int = None, 
+                                    gamma : float = 1,
+                                    sweep_order : str = "normal", # "normal" or "reverse" or "random"
+                                    initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
+                                    typical_value : float = 1,
                                     return_action_values : bool = False,
                                     verbose : int = 1,
-                                    ) -> Union[DiscretePolicyForDiscreteState, np.ndarray]:
+                                    ) -> DiscretePolicyForDiscreteState:
         """This class implements the Value Iteration algorithm. It computes an optimal value function for a given model (transition_probability and reward_probability).
         The algorithm stop either when the value function is stable (no change in the value function) or when the number of iterations is reached.
 
         transition_probability : a numpy array of shape (n_states, n_actions, n_states) representing the transition probability between states and actions.
         reward_probability : a numpy array of shape (n_states, n_actions) representing the reward expected for each state and action.
+        n_iterations : the number of iterations for the policy iteration algorithm.
         gamma : the discount factor
-        n_iterations : the number of iterations for the value iteration algorithm.
+        sweep_order : the order in which we will iterate over the states. "normal" or "reverse" or "random". This can have a significant impact on the convergence of the algorithm.
+        initial_values : the initial values for the action values ("random", "zeros", "optimistic" or a numpy array)
+        typical_value : the typical value for the action values, used for scaling the "random" and "optimistic" value-initialization methods.
         return_action_values : if True, the action values are returned with the policy
-        verbose : the verbosity level. 0 : no print, 1 : print when VI has finished.
+        verbose : the verbosity level. 0 : no print, 1 : print when PI has finished.
         """
         results = self.algo_PI.find_optimal_policy( transition_probability = transition_probability,
                                                     reward_probability = reward_probability,
+                                                    n_iterations=n_iterations,
+                                                    IPE_n_iterations=1,
                                                     gamma = gamma,
-                                                    IPE_n_iterations = 1,
-                                                    n_iterations = n_iterations,
+                                                    sweep_order=sweep_order,
+                                                    initial_action_values=initial_action_values,
+                                                    typical_value=typical_value,
                                                     return_action_values = return_action_values,
                                                     verbose = 0,)
         
@@ -425,17 +464,25 @@ class ValueIteration(PolicyIteration):
 
 
     def find_optimal_policy_yielding(self,  transition_probability : np.ndarray,
-                                                    reward_probability : np.ndarray,
-                                                    gamma : float = 1,
-                                                    n_iterations : int = None, 
-                                                    ) -> Iterator:
+                                            reward_probability : np.ndarray,
+                                            n_iterations : int = None, 
+                                            gamma : float = 1,
+                                            sweep_order : str = "normal", # "normal" or "reverse" or "random"
+                                            initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
+                                            typical_value : float = 1,
+                                            yield_frequency : str = "step", # "step", "iteration" or "global_iteration"
+                                            **kwargs,
+                                            ) -> Iterator:
         """This method performs the Policy Iteration algorithm as find_optimal_policy but yield pi(s) (the actions) and Q(s,a).
         """
-        results = self.algo_PI.find_optimal_policy_yielding(transition_probability = transition_probability,
-                                            reward_probability = reward_probability,
-                                            gamma = gamma,
-                                            IPE_n_iterations = 1,
-                                            n_iterations = n_iterations,
-                                            )
+        results = self.algo_PI.find_optimal_policy_yielding(    transition_probability = transition_probability,
+                                                                reward_probability = reward_probability,
+                                                                n_iterations=n_iterations,
+                                                                IPE_n_iterations=1,
+                                                                gamma = gamma,
+                                                                sweep_order=sweep_order,
+                                                                initial_action_values=initial_action_values,
+                                                                typical_value=typical_value,
+                                                                yield_frequency=yield_frequency,)
         
         return results
