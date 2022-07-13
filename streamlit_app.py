@@ -121,7 +121,7 @@ with col_algo:
 with st.sidebar:
     st.header("Environnement hyperparameters")
     config["gamma"] = st.number_input("Discount factor", value=0.95)
-    config["horizon"] = st.slider("Horizon", 0, 100, value=40)
+    config["timelimit"] = st.slider("Time limit", 0, 100, value=40)
     initial_values = st.selectbox("Initial values", ["zeros", "random", "optimistic"])
     config["initial_state_values"] = initial_values
     config["initial_action_values"] = initial_values

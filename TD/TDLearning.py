@@ -13,7 +13,7 @@ class TD:
                                 n_steps : int = float("inf"),
                                 gamma : float = 0.99,
                                 alpha : float = 0.1,
-                                horizon : int = float("inf"),
+                                timelimit : int = float("inf"),
                                 initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
                                 typical_value : float = 1,
                                 exploring_starts : bool = False,
@@ -29,7 +29,7 @@ class TD:
         n_steps : the maximal number of steps of interaction with the env to perform the algorithm
         gamma : the discount factor
         alpha : the learning rate
-        horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+        timelimit : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
         initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
         typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
         exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
@@ -65,14 +65,14 @@ class TD:
             # Loop through the episode
             t = 0
             done = False
-            while not done and t < horizon and num_total_step < n_steps:
+            while not done and t < timelimit and num_total_step < n_steps:
                 # Take action, observe the next state and reward
                 action = np.random.choice(policy.n_actions, p=policy.probs[state])
                 next_state, reward, done, _ = env.step(action)
                 # Update the state values online                
                 state_values[state] += alpha * (reward + gamma * state_values[next_state] * (1-done) - state_values[state])             
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True
                 # If done, we additonally learn V(s_next) to be 0.
                 if done:
                     state_values[next_state] += alpha * (0 - state_values[next_state])
@@ -96,7 +96,7 @@ class TD:
                                         n_steps : int = float("inf"),
                                         gamma : float = 0.99,
                                         alpha : float = 0.1,
-                                        horizon : int = float("inf"),
+                                        timelimit : int = float("inf"),
                                         initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
                                         typical_value : float = 1,
                                         exploring_starts : bool = False,
@@ -136,7 +136,7 @@ class TD:
             # Loop through the episode
             t = 0
             done = False
-            while not done and t < horizon and num_total_step < n_steps:
+            while not done and t < timelimit and num_total_step < n_steps:
                 yield f"TD(0) Prediction of V - Episode {num_episode}/{n_episodes} - Step {num_total_step}/{n_steps}"
                 # Take action, observe the next state and reward
                 action = np.random.choice(policy.n_actions, p=policy.probs[state])
@@ -144,8 +144,8 @@ class TD:
                 # Update the state values online
                 state_values[state] += alpha * (reward + gamma * state_values[next_state] * (1-done) - state_values[state])
                 if yield_frequency == "step": yield state_values                 
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True
                 # If done, we additonally learn V(s_next) to be 0.
                 if done:
                     state_values[next_state] += alpha * (0 - state_values[next_state])
@@ -167,7 +167,7 @@ class SARSA:
                                 n_steps : int = float("inf"),
                                 gamma : float = 0.99,
                                 alpha : float = 0.1,
-                                horizon : int = float("inf"),
+                                timelimit : int = float("inf"),
                                 initial_action_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
                                 typical_value : float = 1,
                                 exploring_starts : bool = False,
@@ -183,7 +183,7 @@ class SARSA:
         n_steps : the maximal number of steps of interaction with the env to perform the algorithm
         gamma : the discount factor
         alpha : the learning rate
-        horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+        timelimit : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
         initial_action_values : the initial values of the action values. Can be "random", "zeros", "optimistic" or a numpy array.
         typical_value : the typical value of the action values. Used to initialize the action values if initial_action_values is "random".
         exploring_starts : if True, the algorithm will start at a random-non terminal qstate. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
@@ -221,14 +221,14 @@ class SARSA:
             # Loop through the episode
             t = 0
             done = False
-            while not done and t < horizon and num_total_step < n_steps:
+            while not done and t < timelimit and num_total_step < n_steps:
                 # Take action, observe the next state and reward, take next action
                 next_state, reward, done, _ = env.step(action)
                 next_action = np.random.choice(policy.n_actions, p=policy.probs[next_state])
                 # Update the action values online
                 action_values[state][action] += alpha * (reward + gamma * action_values[next_state][next_action] * (1-done) - action_values[state][action])             
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True
                 # If done, we additonally learn Q(s_next, a_next) to be 0.
                 if done:
                     action_values[next_state][next_action] += alpha * (0 - action_values[next_state][next_action])  
@@ -254,7 +254,7 @@ class SARSA:
                                             n_steps : int = float("inf"),
                                             gamma : float = 0.99,
                                             alpha : float = 0.1,
-                                            horizon : int = float("inf"),
+                                            timelimit : int = float("inf"),
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
                                             typical_value : float = 1,
                                             exploring_starts : bool = False,
@@ -287,7 +287,7 @@ class SARSA:
             # Loop through the episode
             t = 0
             done = False
-            while not done and t < horizon and num_total_step < n_steps:
+            while not done and t < timelimit and num_total_step < n_steps:
                 yield f"SARSA Prediction of Q - Episode {num_episode}/{n_episodes} - Step {num_total_step}/{n_steps}"
                 # Take action, observe the next state and reward
                 if not exploring_starts or t>=1:
@@ -298,8 +298,8 @@ class SARSA:
                 # Update the action values online
                 action_values[state][action] += alpha * (reward + gamma * action_values[next_state][next_action] * (1-done) - action_values[state][action])  
                 if yield_frequency == "step": yield action_values           
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True
                 # If done, we additonally learn Q(s_next, a_next) to be 0.
                 if done:
                     action_values[next_state][next_action] += alpha * (0 - action_values[next_state][next_action])  
@@ -321,7 +321,7 @@ class SARSA:
                                     exploration_method : str = "epsilon_greedy", # "epsilon_greedy" or "UCB"
                                     epsilon : Union[float, Scheduler] = 0.1,
                                     alpha : float = 0.1,
-                                    horizon : int = float("inf"),
+                                    timelimit : int = float("inf"),
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value : float = 1,
                                     return_action_values : bool = False,
@@ -337,7 +337,7 @@ class SARSA:
         exploration_method : the method to use for exploration ("epsilon_greedy", "UCB", "exploring_starts" or "greedy")
         epsilon : the epsilon parameter for the epsilon-greedy method, can be a scalar or a Scheduler that returns a scalar given a timestep/episode
         alpha : the alpha parameter for the moving average method
-        horizon : the horizon of the episode (use for non terminal env)
+        timelimit : the timelimit of the episode (use for non terminal env)
         initial_values : the initial values for the action values ("random", "zeros", "optimistic" or a numpy array)
         typical_value : the typical value for the action values, used for scaling the "random" and "optimistic" value-initialization methods.
         return_action_values : if True, the method returns the action values along  with the policy
@@ -389,7 +389,7 @@ class SARSA:
             # Loop through the episode
             t=0
             done = False
-            while not done and t < horizon and num_total_step < n_steps:
+            while not done and t < timelimit and num_total_step < n_steps:
                 # Take action, observe the next state and reward, choose next action
                 next_state, reward, done, _ = env.step(action)
                 if exploration_method == "greedy" or exploration_method == "exploring_starts":
@@ -403,8 +403,8 @@ class SARSA:
                     raise NotImplementedError("Unknown exploration method : {}".format(exploration_method))
                 # Update the action values online
                 action_values[state][action] += alpha * (reward + gamma * action_values[next_state][next_action] * (1-done) - action_values[state][action])
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True
                 # If done, we additonally learn Q(s_next, a_next) to be 0, since by conventon values of terminal states are 0
                 if done:
                     action_values[next_state][next_action] += alpha * (0 - action_values[next_state][next_action])  
@@ -436,7 +436,7 @@ class SARSA:
                                             exploration_method : str = "epsilon_greedy", # "epsilon_greedy" or "UCB"
                                             epsilon : Union[float, Scheduler] = 0.1,
                                             alpha : float = 0.1,
-                                            horizon : int = float("inf"),
+                                            timelimit : int = float("inf"),
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                             typical_value : float = 1,
                                             return_action_values : bool = False,
@@ -492,7 +492,7 @@ class SARSA:
             # Loop through the episode
             t=0
             done = False
-            while not done and t < horizon and num_total_step < n_steps:
+            while not done and t < timelimit and num_total_step < n_steps:
                 # Take action, observe the next state and reward, choose next action
                 next_state, reward, done, _ = env.step(action)
                 if exploration_method == "greedy" or exploration_method == "exploring_starts":
@@ -506,8 +506,8 @@ class SARSA:
                     raise NotImplementedError("Unknown exploration method : {}".format(exploration_method))
                 # Update the action values online
                 action_values[state][action] += alpha * (reward + gamma * action_values[next_state][next_action] * (1-done) - action_values[state][action])
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True
                 # If done, we additonally learn Q(s_next, a_next) to be 0, since by conventon values of terminal states are 0
                 if done:
                     action_values[next_state][next_action] += alpha * (0 - action_values[next_state][next_action])  

@@ -14,7 +14,7 @@ class MonteCarlo:
                                 visit_method : str = "first_visit", # "first_visit" or "every_visit"
                                 averaging_method : str = "cumulative", # "cumulative" or "moving"
                                 alpha : float = 0.1,
-                                horizon : int = float("inf"),
+                                timelimit : int = float("inf"),
                                 initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
                                 typical_value : float = 1.,
                                 exploring_starts : bool = False,
@@ -32,7 +32,7 @@ class MonteCarlo:
         visit_method : the method to use to update the state values, currently only "first_visit" is supported
         averaging_method : the method to use to update the action values. Cumulative is to "tend to" V, while moving is to permanently "track" V. Use the latest for non stationary env.
         alpha : the learning rate
-        horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+        timelimit : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
         initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
         typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
         exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
@@ -101,8 +101,8 @@ class MonteCarlo:
                         states_first_time_seen[state] = t    
                         states_was_seen.add(state) 
 
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True    
+                # timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True    
 
             #Update incrementally the state values
             for state in states_was_seen:
@@ -138,7 +138,7 @@ class MonteCarlo:
                                 visit_method : str = "first_visit", # "first_visit" or "every_visit"
                                 averaging_method : str = "cumulative", # "cumulative" or "moving"
                                 alpha : float = 0.1,
-                                horizon : int = float("inf"),
+                                timelimit : int = float("inf"),
                                 initial_state_values : Union[np.ndarray, str] = "random", # "random", "zeros", "optimistic" or a numpy array
                                 typical_value : float = 1.,
                                 exploring_starts : bool = False,
@@ -216,8 +216,8 @@ class MonteCarlo:
                         states_first_time_seen[state] = t    
                         states_was_seen.add(state) 
 
-                # Horizon : we artificially set the episode as done if the horizon is reached
-                if t >= horizon: done = True    
+                # Timelimit : we artificially set the episode as done if the timelimit is reached
+                if t >= timelimit: done = True    
 
             #Update incrementally the state values
             for state in states_was_seen:
@@ -250,7 +250,7 @@ class MonteCarlo:
                                     visit_method : str = "first_visit", # "first_visit" or "every_visit"
                                     averaging_method : str = "cumulative", # "cumulative" or "moving"
                                     alpha : float = 0.1, 
-                                    horizon : int = float("inf"),
+                                    timelimit : int = float("inf"),
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value : float = 1,
                                     exploring_starts : bool = False,
@@ -269,7 +269,7 @@ class MonteCarlo:
             visit_method : the method to use to update the state values, currently only "first_visit" is supported
             averaging_method : the method to use to update the action values. Cumulative is to "tend to" Q, while moving is to permanently "track" Q. Use the latest for non stationary env.
             alpha : the learning rate (for the moving average)
-            horizon : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
+            timelimit : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
             initial_action_values : the initial action values. Can be "random", "zeros", "optimistic" or a numpy array.
             typical_value : the typical value of the action values. Used to initialize the action values if initial_action_values is "optimistic".
             exploring_starts : if True, each env will start at a random state and a random action will be played. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
@@ -346,8 +346,8 @@ class MonteCarlo:
                                 qstates_first_time_seen[qstate] = t    
                                 qstates_was_seen.add(qstate)
 
-                    # Horizon : we artificially set the episode as done if a certain number of steps is reached
-                    if t >= horizon: done = True
+                    # timelimit : we artificially set the episode as done if a certain number of steps is reached
+                    if t >= timelimit: done = True
                                 
                 #Update incrementally the state values
                 for qstate in qstates_was_seen:
@@ -382,7 +382,7 @@ class MonteCarlo:
                                     visit_method : str = "first_visit", # "first_visit" or "every_visit"
                                     averaging_method : str = "cumulative", # "cumulative" or "moving"
                                     alpha : float = 0.1, 
-                                    horizon : int = float("inf"),
+                                    timelimit : int = float("inf"),
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value = 1,
                                     exploring_starts : bool = False,
@@ -457,7 +457,7 @@ class MonteCarlo:
                             qstates_first_time_seen[qstate] = t    
                             qstates_was_seen.add(qstate)
                 
-                if t >= horizon: done = True
+                if t >= timelimit: done = True
 
             #Update incrementally the state values
             for qstate in qstates_was_seen:
@@ -490,7 +490,7 @@ class MonteCarlo:
                                     visit_method : str = "first_visit", # "first_visit" or "every_visit"
                                     averaging_method : str = "cumulative", # "cumulative" or "moving"
                                     alpha : float = 0.1,
-                                    horizon : int = float("inf"),
+                                    timelimit : int = float("inf"),
                                     initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                     typical_value : float = 1,
                                     return_action_values : bool = False,
@@ -509,7 +509,7 @@ class MonteCarlo:
         visit_method : the method to use for the exploration ("first_visit" or "every_visit")
         averaging_method : the method to use for the averaging ("cumulative" or "moving")
         alpha : the alpha parameter for the moving average method
-        horizon : the horizon of the episode (use for non terminal env)
+        timelimit : the timelimit of the episode (use for non terminal env)
         initial_values : the initial values for the action values ("random", "zeros", "optimistic" or a numpy array)
         typical_value : the typical value for the action values, used for scaling the "random" and "optimistic" value-initialization methods.
         return_action_values : if True, the method returns the action values along  with the policy
@@ -562,7 +562,7 @@ class MonteCarlo:
                                                     visit_method=visit_method,
                                                     averaging_method=averaging_method,
                                                     alpha=alpha,
-                                                    horizon=horizon,
+                                                    timelimit=timelimit,
                                                     initial_action_values=action_values,
                                                     typical_value=typical_value,
                                                     exploring_starts=exploration_method == "exploring_starts",
@@ -592,7 +592,7 @@ class MonteCarlo:
                                             visit_method : str = "first_visit", # "first_visit" or "every_visit"
                                             averaging_method : str = "cumulative", # "cumulative" or "moving"
                                             alpha : float = 0.1,
-                                            horizon : int = float("inf"),
+                                            timelimit : int = float("inf"),
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                             typical_value : float = 1,
                                             is_state_done : Callable = None,
@@ -649,7 +649,7 @@ class MonteCarlo:
                                                     visit_method=visit_method,
                                                     averaging_method=averaging_method,
                                                     alpha=alpha,
-                                                    horizon=horizon,
+                                                    timelimit=timelimit,
                                                     initial_action_values=action_values,
                                                     typical_value=typical_value,
                                                     exploring_starts=exploration_method == "exploring_starts",

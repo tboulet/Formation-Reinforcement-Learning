@@ -34,7 +34,7 @@ policies_and_actions = algo_MC.find_optimal_policy_yielding(    env = RiverEnv()
                                                                 visit_method="first_visit",
                                                                 averaging_method="moving",
                                                                 alpha=.1,
-                                                                horizon=40,
+                                                                timelimit=40,
                                                                 initial_action_values="random",
                                                                 typical_value=-10,
                                                                 is_state_done=lambda state: state == 0,
