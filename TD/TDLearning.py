@@ -102,6 +102,7 @@ class TD:
                                         exploring_starts : bool = False,
                                         is_state_done : Callable = None,
                                         yield_frequency : str = "step", # "iteration", "episode", "step"
+                                        **kwargs,
                                             ) -> Iterator:
         """
         Same as find_state_values, but yields the state values at each step.
@@ -259,6 +260,7 @@ class SARSA:
                                             exploring_starts : bool = False,
                                             is_state_done : Callable = None,
                                             yield_frequency : str = "step",
+                                            **kwargs,
                                                 ) -> Iterator:
         """
         Same as find_action_values, but yields the action values at each step.
@@ -440,6 +442,7 @@ class SARSA:
                                             return_action_values : bool = False,
                                             is_state_done : Callable = None,
                                             yielding_frequency : str = "step", # "step" or "episode"
+                                            **kwargs,
                                             ) -> Iterator:
         """Same as find_optimal_policy, but yields the action values along with the actions through the training
         

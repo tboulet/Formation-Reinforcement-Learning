@@ -44,6 +44,7 @@ if problem == "Prediction Problem":
     
 
     config["policy"] = policy
+    config["algo_name"] = algo_name
     config["algo"] = Algo()
     config["family"] = map_name_to_algo[algo_name]["family"]
     config["values_type"] = values_type
@@ -55,6 +56,7 @@ elif problem == "Control Problem":
     algo_name = st.selectbox("Algorithm", map_problem_to_algo_names["Control Problem"])
     Algo = map_name_to_algo[algo_name]["Algo"]
 
+    config["algo_name"] = algo_name
     config["algo"] = Algo()
     config["family"] = map_name_to_algo[algo_name]["family"]
 
@@ -99,7 +101,9 @@ with col_algo:
 
     if map_name_to_algo[algo_name]["family"] == "TD":
         st.subheader("TD Learning:")
-        pass
+        config["n_episodes"] = st.number_input("Maximal duration in episodes", value=20)
+        config["n_steps"] = st.number_input("Maximal duration in steps", value=30*20)
+        config["alpha"] = st.slider("Learning rate", 0.0, 1.0, value=0.1)
 
     if map_name_to_algo[algo_name]["family"] == "DP":
         st.subheader("Dynamic Programming:")
