@@ -31,6 +31,10 @@ class RiverEnv(gym.Env):
 
         return self.state, reward, done, {}
 
+
+
+
+
     def render(self):
         print(f"L'agent est à {self.state} mètres de la rive.")
 
