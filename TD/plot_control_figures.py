@@ -10,7 +10,8 @@ from policies import DiscretePolicyForDiscreteState
 algo_SARSA = SARSA()
 
 S = np.arange(0,11)
-
+n_episodes = 50
+fps = 30
 
 
 
@@ -25,7 +26,7 @@ S = np.arange(0,11)
 ### Plot the action values estimated through training
 policies_and_actions = algo_SARSA.find_optimal_policy_yielding(env = RiverEnv(),
                                                     gamma=.98,
-                                                    n_episodes = 10,
+                                                    n_episodes = n_episodes,
                                                     n_steps = float("inf"),
                                                     exploration_method='epsilon_greedy',
                                                     epsilon=.1,
@@ -72,5 +73,5 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(len(results)),
                         interval = 20)
 
-anim.save("figure/TD/SARSA_Control_eps_greedy.gif", writer = "ffmpeg", fps = 15)
+anim.save("figure/TD/SARSA_Control_eps_greedy.gif", writer = "ffmpeg", fps = fps)
 plt.show()

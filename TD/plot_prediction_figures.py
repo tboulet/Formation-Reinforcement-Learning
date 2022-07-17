@@ -11,10 +11,10 @@ from policies import DiscretePolicyForDiscreteState
 algo_TD = TD()
 algo_SARSA = SARSA()
 
-n_episodes = 10
+n_episodes = 30
 S = np.arange(0,11)
 y_low_lim = -20
-
+fps = 30
 
 
 
@@ -68,7 +68,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(VS)),
                         interval = 30)
 
-anim.save("figure/TD/v_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/TD/v_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -117,7 +117,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(QSA)),
                         interval = 30)
 
-anim.save("figure/TD/q_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/TD/q_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -130,7 +130,7 @@ policy_leave_beach = DiscretePolicyForDiscreteState(probs = np.array([[0, 1] for
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_TD.find_state_values_yielding(policy = policy_leave_beach,
                                                                             env = RiverEnv(),
-                                                                            n_episodes = n_episodes,
+                                                                            n_episodes = 5,
                                                                             n_steps = float("inf"),
                                                                             gamma=0.8,
                                                                             alpha=0.5,
@@ -168,7 +168,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(VS)),
                         interval = 30)
 
-anim.save("figure/TD/v_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/TD/v_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -179,7 +179,7 @@ plt.show()
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_SARSA.find_action_values_yielding(  policy = policy_leave_beach,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes,
+                                                                                n_episodes = 5,
                                                                                 n_steps = float("inf"),
                                                                                 gamma=0.8,
                                                                                 alpha=0.5,
@@ -220,7 +220,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(QSA)),
                         interval = 100)
 
-anim.save("figure/TD/q_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/TD/q_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -274,7 +274,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(VS)),
                         interval = 30)
 
-anim.save("figure/TD/v_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/TD/v_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -325,5 +325,5 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(QSA)),
                         interval = 100)
 
-anim.save("figure/TD/q_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/TD/q_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()

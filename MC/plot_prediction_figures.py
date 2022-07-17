@@ -13,7 +13,7 @@ algo_MC = MonteCarlo()
 n_episodes = 10
 S = np.arange(0,11)
 y_low_lim = -20
-
+fps = 30
 
 
 
@@ -28,7 +28,7 @@ policy_join_beach = DiscretePolicyForDiscreteState(probs = np.array([[1, 0] for 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_join_beach,
                                                                             env = RiverEnv(),
-                                                                            n_episodes = n_episodes,
+                                                                            n_episodes = 3 * n_episodes,
                                                                             gamma=0.98,
                                                                             visit_method="first_visit",
                                                                             averaging_method="moving",
@@ -66,7 +66,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(VS)),
                         interval = 30)
 
-anim.save("figure/MC/v_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/MC/v_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -76,7 +76,7 @@ plt.show()
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_join_beach,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes * 4,
+                                                                                n_episodes = 3 * n_episodes,
                                                                                 gamma=0.98,
                                                                                 visit_method="first_visit",
                                                                                 averaging_method="moving",
@@ -115,7 +115,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(QSA)),
                         interval = 30)
 
-anim.save("figure/MC/q_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/MC/q_values_joinBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -128,8 +128,8 @@ policy_leave_beach = DiscretePolicyForDiscreteState(probs = np.array([[0, 1] for
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_leave_beach,
                                                                             env = RiverEnv(),
-                                                                            n_episodes = 40,
-                                                                            gamma=0.98,
+                                                                            n_episodes = 2  * n_episodes,
+                                                                            gamma=0.8,
                                                                             visit_method="first_visit",
                                                                             averaging_method="moving",
                                                                             alpha=0.1,
@@ -165,7 +165,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(VS)),
                         interval = 30)
 
-anim.save("figure/MC/v_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/MC/v_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -176,8 +176,8 @@ plt.show()
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_leave_beach,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes * 4,
-                                                                                gamma=0.98,
+                                                                                n_episodes = 2 * n_episodes,
+                                                                                gamma=0.8,
                                                                                 visit_method="first_visit",
                                                                                 averaging_method="moving",
                                                                                 alpha=0.1,
@@ -216,7 +216,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(QSA)),
                         interval = 100)
 
-anim.save("figure/MC/q_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/MC/q_values_leaveBeach_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -232,7 +232,7 @@ policy_swim_randomly = DiscretePolicyForDiscreteState(probs = np.array([[0.8, 0.
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_swim_randomly,
                                                                             env = RiverEnv(),
-                                                                            n_episodes = 40,
+                                                                            n_episodes = 3 * n_episodes,
                                                                             gamma=0.98,
                                                                             visit_method="first_visit",
                                                                             averaging_method="moving",
@@ -269,7 +269,7 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(VS)),
                         interval = 30)
 
-anim.save("figure/MC/v_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/MC/v_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()
 
 
@@ -280,13 +280,13 @@ plt.show()
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_swim_randomly,
                                                                                 env = RiverEnv(),
-                                                                                n_episodes = n_episodes * 4,
+                                                                                n_episodes = 4 * n_episodes,
                                                                                 gamma=0.98,
                                                                                 visit_method="first_visit",
                                                                                 averaging_method="moving",
                                                                                 alpha=0.1,
                                                                                 timelimit=40,
-                                                                                initial_action_values="optmistic",
+                                                                                initial_action_values="random",
                                                                                 typical_value = -5,
                                                                                 exploring_starts=False,
                                                                                 is_state_done=lambda state: state == 0,
@@ -319,5 +319,5 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(0, len(QSA)),
                         interval = 100)
 
-anim.save("figure/MC/q_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = 2)
+anim.save("figure/MC/q_values_swim_randomly_estimated.gif", writer = "ffmpeg", fps = fps)
 plt.show()

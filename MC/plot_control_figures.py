@@ -12,7 +12,7 @@ algo_MC = MonteCarlo()
 n_iterations = 10
 n_iterations_evaluation = 50
 S = np.arange(0,11)
-
+fps = 30
 
 
 
@@ -83,6 +83,5 @@ anim = FuncAnimation(   fig = fig,
                         repeat = True,
                         frames = np.arange(len(results)),
                         interval = 20)
-
-anim.save("figure/MC/MC_Control_eps_greedy.gif", writer = "ffmpeg", fps = 15)
 plt.show()
+anim.save("figure/MC/MC_Control_eps_greedy.gif", writer = "ffmpeg", fps = 15)

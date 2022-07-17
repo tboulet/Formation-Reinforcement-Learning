@@ -287,6 +287,7 @@ class PolicyIteration:
                                     typical_value : float = 1,
                                     return_action_values : bool = False,
                                     verbose : int = 1,
+                                    stop_if_policy_stable = True,
                                     ) -> DiscretePolicyForDiscreteState :
 
         """This method performs the Policy Iteration algorithm. It computes an optimal policy for a given model (transition_probability and reward_probability).
@@ -303,6 +304,7 @@ class PolicyIteration:
         typical_value : the typical value for the action values, used for scaling the "random" and "optimistic" value-initialization methods.
         return_action_values : if True, the action values are returned with the policy
         verbose : the verbosity level. 0 : no print, 1 : print when PI has finished.
+        stop_if_policy_stable : if True, the algorithm stops when the policy is stable because it consider the policy has converged.
         """
         assert n_iterations >= 1, "The number of iterations must be strictly positive."
 
@@ -340,7 +342,7 @@ class PolicyIteration:
                 actions[state] = np.argmax(action_values[state])
             
             n_iter += 1
-            if (actions == actions_old).all():
+            if stop_if_policy_stable and (actions == actions_old).all():
                 break
         
         if verbose >= 1:
@@ -366,6 +368,7 @@ class PolicyIteration:
                                             initial_action_values : Union[np.ndarray, str] = "random", # "random" or "zeros" or "optimistic" or a numpy array
                                             typical_value : float = 1,
                                             yield_frequency : str = "step", # "step", "iteration" or "global_iteration"
+                                            stop_if_policy_stable = True,
                                             **kwargs,
                                             ) -> Iterator:
 
@@ -413,7 +416,7 @@ class PolicyIteration:
             yield actions
             yield action_values
             n_iter += 1
-            if (actions == actions_old).all():
+            if stop_if_policy_stable and (actions == actions_old).all():
                 break
         
 
@@ -454,6 +457,7 @@ class ValueIteration(PolicyIteration):
                                                     initial_action_values=initial_action_values,
                                                     typical_value=typical_value,
                                                     return_action_values = return_action_values,
+                                                    stop_if_policy_stable = False,
                                                     verbose = 0,)
         
         if verbose >= 1:
@@ -483,6 +487,7 @@ class ValueIteration(PolicyIteration):
                                                                 sweep_order=sweep_order,
                                                                 initial_action_values=initial_action_values,
                                                                 typical_value=typical_value,
-                                                                yield_frequency=yield_frequency,)
+                                                                yield_frequency=yield_frequency,
+                                                                stop_if_policy_stable=False,)
         
         return results

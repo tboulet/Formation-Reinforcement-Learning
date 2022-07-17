@@ -24,11 +24,15 @@ algo_PI = PolicyIteration()
 
 ### Plot the state values estimated through training
 policies_and_actions = algo_PI.find_optimal_policy_yielding(transition_probability=transition_probability,
-                                                              reward_probability=reward_probability,
-                                                              gamma=1,
-                                                              IPE_maximal_error=0.8,      # we wait the IPE algorithm to converge
-                                                              IPE_n_iterations=5,
-                                                              n_iterations=n_iterations,
+                                                            reward_probability=reward_probability,
+                                                            gamma=.98,
+                                                            n_iterations=8,
+                                                            IPE_n_iterations=5,
+                                                            IPE_threshold=.05,
+                                                            sweep_order="random",
+                                                            initial_action_values="random",
+                                                            typical_value=-1,
+                                                            yield_frequency="step",
                                                               )
 
 
@@ -39,22 +43,29 @@ fig, ax = plt.subplots()
 ax.set_xlim(-1, 11)
 ax.set_ylim(-20, bact + 2)
 ax.set_xlabel("s")
-ax.set_title(f"Policy Iteration : PI Iteration 0")
+title_control = f"DP Control (PI or VI) - Iteration 0"
+title_prediction = f"DP Prediction of Q (IPE) - Iteration 0"
 
 # actions, = ax.plot(S, results[1] + bact, ".b", label = "Actions")
-actions_join, =ax.plot(S[results[1] == 0], [bact] * (len(S)-np.sum(results[1])), "<g", label = "Actions")
-actions_leave, =ax.plot(S[results[1] == 1], [bact] * np.sum(results[1]), ">r")
-qvalues_closer, = ax.plot(S, results[2][:, 0], ".g", label = "Estimated Q(s,a) for a = get_closer_to_beach")
-qvalues_far,    = ax.plot(S, results[2][:, 1], "xr", label = "Estimated Q(s,a) for a = get_far_from_beach")
+actions_join, =ax.plot(S[results[0] == 0], [bact] * (len(S)-np.sum(results[0])), "<g", label = "Actions")
+actions_leave, =ax.plot(S[results[0] == 1], [bact] * np.sum(results[0]), ">r")
+qvalues_closer, = ax.plot(S, results[1][:, 0], ".g", label = "Estimated Q(s,a) for a = get_closer_to_beach")
+qvalues_far,    = ax.plot(S, results[1][:, 1], "xr", label = "Estimated Q(s,a) for a = get_far_from_beach")
 ax.legend()
 
 def update(n):
+    global title_control, title_prediction
     if n>= len(results):
         ax.set_title("Policy Iteration (ended)")
         return
     data = results[n]
     if type(data) == str:
-        ax.set_title(f"Policy Iteration : {data}")
+        if "Control" in data:
+            title_control = data
+            ax.set_title(title_control + " | " + title_prediction)
+        elif "Prediction" in data:
+            title_prediction = data
+            ax.set_title(title_control + " | " + title_prediction)
     elif type(data) == np.ndarray:
         if len(data.shape) == 1:
             actions_join.set_data(S[data == 0], [bact] * (len(S)-np.sum(data)))
@@ -69,8 +80,9 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(2, len(results)),
                         interval = 100)
 
-anim.save("figure/DP/policy_iteration.gif", writer = "ffmpeg", fps = 20)
 plt.show()
+anim.save("figure/DP/policy_iteration.gif", writer = "ffmpeg", fps = 30)
+
 
 
 
@@ -84,9 +96,13 @@ algo_VI = ValueIteration()
 
 ### Plot the state values estimated through training
 policies_and_actions = algo_VI.find_optimal_policy_yielding(transition_probability=transition_probability,
-                                                              reward_probability=reward_probability,
-                                                              gamma=0.95,
-                                                              n_iterations=n_iterations,
+                                                            reward_probability=reward_probability,
+                                                            gamma=.98,
+                                                            n_iterations=15,
+                                                            sweep_order="random",
+                                                            initial_action_values="random",
+                                                            typical_value=-1,
+                                                            yield_frequency="step",
                                                               )
 
 
@@ -97,22 +113,29 @@ fig, ax = plt.subplots()
 ax.set_xlim(-1, 11)
 ax.set_ylim(-20, bact + 2)
 ax.set_xlabel("s")
-ax.set_title(f"Value Iteration : VI Iteration 0")
+title_control = f"DP Control (PI or VI) - Iteration 0"
+title_prediction = f"DP Prediction of Q (IPE) - Iteration 0"
 
 # actions, = ax.plot(S, results[1] + bact, ".b", label = "Actions")
-actions_join, =ax.plot(S[results[1] == 0], [bact] * (len(S)-np.sum(results[1])), "<g", label = "Actions")
-actions_leave, =ax.plot(S[results[1] == 1], [bact] * np.sum(results[1]), ">r")
-qvalues_closer, = ax.plot(S, results[2][:, 0], ".g", label = "Estimated Q(s,a) for a = get_closer_to_beach")
-qvalues_far,    = ax.plot(S, results[2][:, 1], "xr", label = "Estimated Q(s,a) for a = get_far_from_beach")
+actions_join, =ax.plot(S[results[0] == 0], [bact] * (len(S)-np.sum(results[0])), "<g", label = "Actions")
+actions_leave, =ax.plot(S[results[0] == 1], [bact] * np.sum(results[0]), ">r")
+qvalues_closer, = ax.plot(S, results[1][:, 0], ".g", label = "Estimated Q(s,a) for a = get_closer_to_beach")
+qvalues_far,    = ax.plot(S, results[1][:, 1], "xr", label = "Estimated Q(s,a) for a = get_far_from_beach")
 ax.legend()
 
 def update(n):
+    global title_control, title_prediction
     if n>= len(results):
         ax.set_title("Value Iteration (ended)")
         return
     data = results[n]
     if type(data) == str:
-        ax.set_title(f"Value Iteration : {data}")
+        if "Control" in data:
+            title_control = data
+            ax.set_title(title_control + " | " + title_prediction)
+        elif "Prediction" in data:
+            title_prediction = data
+            ax.set_title(title_control + " | " + title_prediction)
     elif type(data) == np.ndarray:
         if len(data.shape) == 1:
             actions_join.set_data(S[data == 0], [bact] * (len(S)-np.sum(data)))
@@ -127,5 +150,5 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(2, len(results)),
                         interval = 100)
 
-anim.save("figure/DP/value_iteration.gif", writer = "ffmpeg", fps = 20)
+anim.save("figure/DP/value_iteration.gif", writer = "ffmpeg", fps = 30)
 plt.show()
