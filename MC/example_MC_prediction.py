@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import *
-from riverEnv import RiverEnv
+from env.riverEnv import RiverEnv
 from MC.monteCarlo import MonteCarlo
 from policies import DiscretePolicyForDiscreteState
 

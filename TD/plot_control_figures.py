@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from riverEnv import RiverEnv
+from env.riverEnv import RiverEnv
 from TD.TDLearning import SARSA
 from policies import DiscretePolicyForDiscreteState
 

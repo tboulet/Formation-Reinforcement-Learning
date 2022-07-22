@@ -44,7 +44,8 @@ def run_rl_algorithm(**config):
     n_states, n_actions = env.observation_space.n, env.action_space.n
     
     greedy_actions = None
-    y_greedy_actions = 4
+    a, b = config["range_values"]
+    y_greedy_actions = 0.9 * b + 0.1 * a
     for data in datas:
         # If the data is a string, modify the title of the next frames.
         if type(data) == str:
@@ -84,7 +85,7 @@ def run_rl_algorithm(**config):
                             y = "values", 
                             color = "action", # if values_type == "Action values Q" else None, 
                             animation_frame="frame",
-                            range_x=[-1, env.observation_space.n], range_y=[-20, 5])
+                            range_x=[-1, env.observation_space.n], range_y=config["range_values"])
 
     #This is for animated title for an animation (only way kekw)
     if len(fig.layout.updatemenus) == 0: raise ValueError("Likely cause of this error : The frequency for frame doesn't make sense for this algorithm, please change.")
@@ -97,4 +98,4 @@ def run_rl_algorithm(**config):
     if st.checkbox("Display training"):
         st.plotly_chart(fig)
         if greedy_actions is not None:
-            st.write("The points that stays at y=4 represents the greedy action. They are those chosen by the agent in the case of a greedy policy.")
+            st.write(f"The points that stays at y={y_greedy_actions} represents the greedy action. They are those chosen by the agent in the case of a greedy policy.")

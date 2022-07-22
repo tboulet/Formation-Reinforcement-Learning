@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import *
-from riverEnv import env
+from env.riverEnv import env
 from MC.monteCarlo import MonteCarlo
 
 algo_MC = MonteCarlo()

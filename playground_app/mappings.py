@@ -1,7 +1,9 @@
 from MC.monteCarlo import MonteCarlo
 from DP.dynamicProgramming import IterativePolicyEvaluation, PolicyIteration, ValueIteration
 from TD.TDLearning import TD, SARSA
-from riverEnv import RiverEnv, transition_probability, reward_probability
+
+from env.riverEnv import RiverEnv, transition_probability_river, reward_probability_river
+from env.nimEnv import NimEnv, transition_probability_nim, reward_probability_nim
 
 map_name_to_algo = {"IterativePolicyEvaluation": {  "Algo": IterativePolicyEvaluation, 
                                                     "family": "DP"},
@@ -19,11 +21,16 @@ map_name_to_algo = {"IterativePolicyEvaluation": {  "Algo": IterativePolicyEvalu
                         }
 
 map_name_to_env = { "RiverEnv": { "Env" : RiverEnv, 
-                                    "model" : (transition_probability, reward_probability),
+                                    "model" : (transition_probability_river, reward_probability_river),
                                     "is_state_done" : lambda state : state == 0,
+                                    "range_values" : [-20, 5]
                                     },
                     
-                    "NimEnv" : None,        
+                    "NimEnv" :  { "Env" : NimEnv, 
+                                    "model" : (transition_probability_nim, reward_probability_nim),
+                                    "is_state_done" : lambda state : state <= 0,
+                                    "range_values" : [-2, 2]
+                                    },        
                                 
                         }
 

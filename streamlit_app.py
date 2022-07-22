@@ -12,14 +12,16 @@ config = {}
 
 # Input 1 : env and problem type
 st.sidebar.header("Problem")
-env_name = st.sidebar.selectbox("Environment", ["RiverEnv"])
+env_name = st.sidebar.selectbox("Environment", map_name_to_env.keys())
 problem =  st.sidebar.selectbox("Problem", ["Prediction Problem", "Control Problem"])
 
-Env = map_name_to_env[env_name]["Env"]
-Pssa, Rsa = map_name_to_env[env_name]["model"]
-config["env"] = Env()
+env_dict = map_name_to_env[env_name]
+Pssa, Rsa = env_dict["model"]
+env = env_dict["Env"]()
+config["env"] = env
 config["transition_probability"] = Pssa
 config["reward_probability"] = Rsa
+config["range_values"] = env_dict["range_values"]
 config["problem"] = problem
 
 if problem == "Prediction Problem":
@@ -31,10 +33,9 @@ if problem == "Prediction Problem":
 
     values_type = st.selectbox("Values to estimate", ["State values V", "Action values Q"])
 
-    env = Env()
     n_actions = env.action_space.n
     action_probs = list()
-    st.caption("Policy to evaluate: (will be normalized)")
+    st.caption("Policy to evaluate: (will be normalized). This playground can only evaluate blind policy (non dependant on states).")
     for action in range(n_actions):
         action_probs.append(st.slider(f"Action {action}", 0, 100, value=50))
     action_probs = np.array(action_probs) / np.sum(action_probs)
