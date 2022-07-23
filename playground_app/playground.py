@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from utils import *
 
 def run_rl_algorithm(**config):
@@ -81,11 +82,12 @@ def run_rl_algorithm(**config):
             num_frame += 1
     #Create df and plotly figure : we plot the value in function of the state, and the time-axis is defined as frame. We group data by action to distinguish Q(s,a) for different a.
     df = pd.DataFrame(datas_list, columns=["frame", "state", "action", "values"])
+    range_states = [-1, env.observation_space.n]
     fig = px.scatter(df,    x = "state", 
                             y = "values", 
                             color = "action", # if values_type == "Action values Q" else None, 
                             animation_frame="frame",
-                            range_x=[-1, env.observation_space.n], range_y=config["range_values"])
+                            range_x=range_states, range_y=config["range_values"])
 
     #This is for animated title for an animation (only way kekw)
     if len(fig.layout.updatemenus) == 0: raise ValueError("Likely cause of this error : The frequency for frame doesn't make sense for this algorithm, please change.")
@@ -94,6 +96,13 @@ def run_rl_algorithm(**config):
     for k in range(len(fig.frames)):
         fig.frames[k]['layout'].update(title_text=frame_titles[k])
     
+    
+    # fig.add_trace(go.Scatter(
+    # x=range_states,
+    # y=[y_greedy_actions] * len(range_states),
+    # name="",
+    # ))
+
     #Display the figure
     if st.checkbox("Display training"):
         st.plotly_chart(fig)
