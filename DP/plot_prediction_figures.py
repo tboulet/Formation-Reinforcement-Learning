@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from env.riverEnv import transition_probability_river, reward_probability_river
+from env.oceanEnv import transition_probability_ocean, reward_probability_ocean
 from DP.dynamicProgramming import IterativePolicyEvaluation
 from policies import DiscretePolicyForDiscreteState
 
@@ -27,8 +27,8 @@ policy_join_beach = DiscretePolicyForDiscreteState(probs = np.array([[1, 0] for 
 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   policy = policy_join_beach,
-                                                                                transition_probability = transition_probability_river,
-                                                                                reward_probability = reward_probability_river,
+                                                                                transition_probability = transition_probability_ocean,
+                                                                                reward_probability = reward_probability_ocean,
                                                                                 n_iterations = n_iterations,
                                                                                 maximal_error = 0.01,
                                                                                 gamma=0.98,
@@ -70,8 +70,8 @@ plt.show()
 
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_IPE.find_action_values_yielding( policy = policy_join_beach,
-                                                                                transition_probability = transition_probability_river,
-                                                                                reward_probability = reward_probability_river,
+                                                                                transition_probability = transition_probability_ocean,
+                                                                                reward_probability = reward_probability_ocean,
                                                                                 n_iterations = n_iterations,
                                                                                 maximal_error = 0.01,
                                                                                 gamma = 0.98)
@@ -115,8 +115,8 @@ policy_leave_beach = DiscretePolicyForDiscreteState(probs = np.array([[0, 1] for
 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   policy = policy_leave_beach,
-                                                                                transition_probability = transition_probability_river,
-                                                                                reward_probability = reward_probability_river,
+                                                                                transition_probability = transition_probability_ocean,
+                                                                                reward_probability = reward_probability_ocean,
                                                                                 n_iterations = n_iterations,
                                                                                 maximal_error = 0.01,
                                                                                 gamma=0.8)
@@ -157,8 +157,8 @@ plt.show()
 
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_IPE.find_action_values_yielding( policy = policy_leave_beach,
-                                                                                transition_probability = transition_probability_river,
-                                                                                reward_probability = reward_probability_river,
+                                                                                transition_probability = transition_probability_ocean,
+                                                                                reward_probability = reward_probability_ocean,
                                                                                 n_iterations = n_iterations,
                                                                                 maximal_error = 0.01,
                                                                                 gamma = 0.8)
@@ -204,8 +204,8 @@ policy_swim_randomly = DiscretePolicyForDiscreteState(probs = np.array([[0.8, 0.
 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_IPE.find_state_values_yielding(   policy = policy_swim_randomly,
-                                                                                transition_probability = transition_probability_river,
-                                                                                reward_probability = reward_probability_river,
+                                                                                transition_probability = transition_probability_ocean,
+                                                                                reward_probability = reward_probability_ocean,
                                                                                 n_iterations = n_iterations,
                                                                                 maximal_error = 0.01,
                                                                                 gamma=0.98)
@@ -246,8 +246,8 @@ plt.show()
 
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_IPE.find_action_values_yielding( policy = policy_swim_randomly,
-                                                                                transition_probability = transition_probability_river,
-                                                                                reward_probability = reward_probability_river,
+                                                                                transition_probability = transition_probability_ocean,
+                                                                                reward_probability = reward_probability_ocean,
                                                                                 n_iterations = n_iterations,
                                                                                 maximal_error = 0.01,
                                                                                 gamma = 0.98)

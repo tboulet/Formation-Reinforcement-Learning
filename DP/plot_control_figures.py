@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from env.riverEnv import transition_probability_river, reward_probability_river
+from env.oceanEnv import transition_probability_ocean, reward_probability_ocean
 from DP.dynamicProgramming import PolicyIteration, ValueIteration
 
 n_iterations = 10
@@ -23,8 +23,8 @@ S = np.arange(0,11)
 algo_PI = PolicyIteration()
 
 ### Plot the state values estimated through training
-policies_and_actions = algo_PI.find_optimal_policy_yielding(transition_probability=transition_probability_river,
-                                                            reward_probability=reward_probability_river,
+policies_and_actions = algo_PI.find_optimal_policy_yielding(transition_probability=transition_probability_ocean,
+                                                            reward_probability=reward_probability_ocean,
                                                             gamma=.98,
                                                             n_iterations=8,
                                                             IPE_n_iterations=5,
@@ -95,8 +95,8 @@ anim.save("figure/DP/policy_iteration.gif", writer = "ffmpeg", fps = 30)
 algo_VI = ValueIteration()
 
 ### Plot the state values estimated through training
-policies_and_actions = algo_VI.find_optimal_policy_yielding(transition_probability=transition_probability_river,
-                                                            reward_probability=reward_probability_river,
+policies_and_actions = algo_VI.find_optimal_policy_yielding(transition_probability=transition_probability_ocean,
+                                                            reward_probability=reward_probability_ocean,
                                                             gamma=.98,
                                                             n_iterations=15,
                                                             sweep_order="random",
