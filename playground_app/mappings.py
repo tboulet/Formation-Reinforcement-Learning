@@ -4,6 +4,7 @@ from TD.TDLearning import TD, SARSA
 
 from env.riverEnv import RiverEnv, transition_probability_river, reward_probability_river
 from env.nimEnv import NimEnv, transition_probability_nim, reward_probability_nim
+from env.contextualBanditEnv import ContextualBanditEnv, transition_probability_CB, reward_probability_CB
 
 map_name_to_algo = {"IterativePolicyEvaluation": {  "Algo": IterativePolicyEvaluation, 
                                                     "family": "DP"},
@@ -20,16 +21,22 @@ map_name_to_algo = {"IterativePolicyEvaluation": {  "Algo": IterativePolicyEvalu
                     
                         }
 
-map_name_to_env = { "RiverEnv": { "Env" : RiverEnv, 
+map_name_to_env = { "River": { "Env" : RiverEnv, 
                                     "model" : (transition_probability_river, reward_probability_river),
                                     "is_state_done" : lambda state : state == 0,
                                     "range_values" : [-20, 5]
                                     },
                     
-                    "NimEnv" :  { "Env" : NimEnv, 
+                    "Nim" :  { "Env" : NimEnv, 
                                     "model" : (transition_probability_nim, reward_probability_nim),
                                     "is_state_done" : lambda state : state <= 0,
                                     "range_values" : [-2, 2]
+                                    }, 
+
+                    "n-Bandit Contextual" :  { "Env" : ContextualBanditEnv, 
+                                    "model" : (transition_probability_CB, reward_probability_CB),
+                                    "is_state_done" : lambda state : state == -1,
+                                    "range_values" : [-1, 4]
                                     },        
                                 
                         }
