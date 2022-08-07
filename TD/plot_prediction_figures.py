@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from env.oceanEnv import RiverEnv
+from env.oceanEnv import OceanEnv
 from TD.TDLearning import TD, SARSA
 from policies import DiscretePolicyForDiscreteState
 
@@ -28,7 +28,7 @@ policy_join_beach = DiscretePolicyForDiscreteState(probs = np.array([[1, 0] for 
 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_TD.find_state_values_yielding(policy = policy_join_beach,
-                                                                            env = RiverEnv(),
+                                                                            env = OceanEnv(),
                                                                             n_episodes = n_episodes,
                                                                             n_steps = float("inf"),
                                                                             gamma=0.99,
@@ -76,7 +76,7 @@ plt.show()
 
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_SARSA.find_action_values_yielding(  policy = policy_join_beach,
-                                                                                env = RiverEnv(),
+                                                                                env = OceanEnv(),
                                                                                 n_episodes = n_episodes,
                                                                                 n_steps = float("inf"),
                                                                                 gamma=0.99,
@@ -129,7 +129,7 @@ policy_leave_beach = DiscretePolicyForDiscreteState(probs = np.array([[0, 1] for
 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_TD.find_state_values_yielding(policy = policy_leave_beach,
-                                                                            env = RiverEnv(),
+                                                                            env = OceanEnv(),
                                                                             n_episodes = 5,
                                                                             n_steps = float("inf"),
                                                                             gamma=0.8,
@@ -178,7 +178,7 @@ plt.show()
 
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_SARSA.find_action_values_yielding(  policy = policy_leave_beach,
-                                                                                env = RiverEnv(),
+                                                                                env = OceanEnv(),
                                                                                 n_episodes = 5,
                                                                                 n_steps = float("inf"),
                                                                                 gamma=0.8,
@@ -235,7 +235,7 @@ policy_swim_randomly = DiscretePolicyForDiscreteState(probs = np.array([[0.8, 0.
 
 ### Plot the state values estimated through training
 estimated_state_values_during_training = algo_TD.find_state_values_yielding(policy = policy_swim_randomly,
-                                                                            env = RiverEnv(),
+                                                                            env = OceanEnv(),
                                                                             n_episodes = n_episodes,
                                                                             n_steps = float("inf"),
                                                                             gamma=0.99,
@@ -284,7 +284,7 @@ plt.show()
 
 ### Plot the action values estimated through training
 estimated_action_values_during_training = algo_SARSA.find_action_values_yielding(  policy = policy_swim_randomly,
-                                                                                env = RiverEnv(),
+                                                                                env = OceanEnv(),
                                                                                 n_episodes = n_episodes,
                                                                                 n_steps = float("inf"),
                                                                                 gamma=0.99,

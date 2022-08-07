@@ -1,14 +1,14 @@
 import numpy as np
 
 from utils import *
-from env.oceanEnv import env
+from env.oceanEnv import OceanEnv
 from MC.monteCarlo import MonteCarlo
 
 algo_MC = MonteCarlo()
 n_iterations = 10
 
 print("\nFinding optimal policy...")
-optimal_policy, action_values = algo_MC.find_optimal_policy(env = env,
+optimal_policy, action_values = algo_MC.find_optimal_policy(env = OceanEnv(),
                                                             gamma=.98,
                                                             n_iterations=n_iterations,
                                                             evaluation_episodes=100,

@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import *
-from env.oceanEnv import RiverEnv
+from env.oceanEnv import OceanEnv
 from MC.monteCarlo import MonteCarlo
 from policies import DiscretePolicyForDiscreteState
 
@@ -11,7 +11,7 @@ algo_MC = MonteCarlo()
 
 print("\nComputing state values for the policy policy_swim_randomly...")
 estimated_state_values = algo_MC.find_state_values( policy = policy_swim_randomly,
-                                                    env = RiverEnv(),
+                                                    env = OceanEnv(),
                                                     n_episodes = 10,
                                                     gamma=0.98,
                                                     visit_method="first_visit",
@@ -28,7 +28,7 @@ print("Estimated state values :", estimated_state_values)
 
 print("\nEstimated state values during the learning:")
 estimated_state_values_during_training = algo_MC.find_state_values_yielding(policy = policy_swim_randomly,
-                                                                            env = RiverEnv(),
+                                                                            env = OceanEnv(),
                                                                             n_episodes = 2,
                                                                             gamma=0.98,
                                                                             visit_method="first_visit",
@@ -45,7 +45,7 @@ for estimated_state_values in estimated_state_values_during_training:
 
 print("\nComputing action values for the policy policy_swim_randomly...")
 estimated_action_values = algo_MC.find_action_values(   policy = policy_swim_randomly,
-                                                        env = RiverEnv(),
+                                                        env = OceanEnv(),
                                                         n_episodes=10,
                                                         gamma=0.98,
                                                         visit_method="first_visit",
@@ -61,7 +61,7 @@ print("Estimated action values :", estimated_action_values)
 
 print("\nEstimated action values during the learning:")
 estimated_action_values_during_training = algo_MC.find_action_values_yielding(  policy = policy_swim_randomly,
-                                                                                env = RiverEnv(),
+                                                                                env = OceanEnv(),
                                                                                 n_episodes=2,
                                                                                 gamma=0.98,
                                                                                 visit_method="first_visit",

@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import *
-from env.oceanEnv import RiverEnv
+from env.oceanEnv import OceanEnv
 from TD.TDLearning import TD, SARSA
 from policies import DiscretePolicyForDiscreteState
 
@@ -12,7 +12,7 @@ algo_SARSA = SARSA()
 
 print("\nComputing state values for the policy policy_swim_randomly...")
 estimated_state_values = algo_TD.find_state_values( policy = policy_swim_randomly,
-                                                    env = RiverEnv(),
+                                                    env = OceanEnv(),
                                                     n_episodes = 100,
                                                     n_steps = 100000,
                                                     gamma=0.99,
@@ -28,7 +28,7 @@ print("Estimated state values :", estimated_state_values)
 
 print("\nEstimated state values during the learning:")
 estimated_state_values_during_training = algo_TD.find_state_values_yielding(policy = policy_swim_randomly,
-                                                                            env = RiverEnv(),
+                                                                            env = OceanEnv(),
                                                                             n_episodes = 50,
                                                                             n_steps = float("inf"),
                                                                             gamma=0.99,
@@ -46,7 +46,7 @@ for estimated_state_values in estimated_state_values_during_training:
 
 print("\nComputing action values for the policy policy_swim_randomly...")
 estimated_action_values = algo_SARSA.find_action_values(   policy = policy_swim_randomly,
-                                                        env = RiverEnv(),
+                                                        env = OceanEnv(),
                                                         n_episodes = 100,
                                                         n_steps = float("inf"),
                                                         gamma=0.99,
@@ -62,7 +62,7 @@ print("Estimated action values :", estimated_action_values)
 
 print("\nEstimated action values during the learning:")
 estimated_action_values_during_training = algo_TD.find_action_values_yielding(  policy = policy_swim_randomly,
-                                                                                env = RiverEnv(),
+                                                                                env = OceanEnv(),
                                                                                 n_episodes = 1,
                                                                                 n_steps = 10,
                                                                                 gamma=0.99,

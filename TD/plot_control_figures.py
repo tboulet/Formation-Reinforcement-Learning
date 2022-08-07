@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from env.oceanEnv import RiverEnv
+from env.oceanEnv import OceanEnv
 from TD.TDLearning import SARSA
 from policies import DiscretePolicyForDiscreteState
 
@@ -24,7 +24,7 @@ fps = 30
 ### ====================================================================================================================== ###
 
 ### Plot the action values estimated through training
-policies_and_actions = algo_SARSA.find_optimal_policy_yielding(env = RiverEnv(),
+policies_and_actions = algo_SARSA.find_optimal_policy_yielding(env = OceanEnv(),
                                                     gamma=.98,
                                                     n_episodes = n_episodes,
                                                     n_steps = float("inf"),
