@@ -28,7 +28,7 @@ print("Optimal policy's probs:", optimal_policy.probs)
 print("Final action values:", action_values)
 
 print("\nActions and action values during the learning:")
-for elem in algo_MC.find_optimal_policy_yielding(   env = env,
+for elem in algo_MC.find_optimal_policy_yielding(   env = OceanEnv(),
                                                     gamma=.98,
                                                     n_iterations=2,
                                                     evaluation_episodes=3,

@@ -1,5 +1,6 @@
 venv*
 test.py 
+figure/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
