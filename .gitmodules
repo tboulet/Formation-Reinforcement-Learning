@@ -1,0 +1,3 @@
+[submodule "gridworld_rl"]
+	path = gridworld_rl
+	url = git@github.com:tboulet/gridworld_rl.git
