@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import *
-from env.oceanEnv import OceanEnv
+from environnements.oceanEnv import OceanEnv
 from MC.monteCarlo import MonteCarlo
 from policies import DiscretePolicyForDiscreteState
 

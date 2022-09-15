@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import *
-from env.oceanEnv import env
+from environnements.oceanEnv import env
 from TD.TDLearning import SARSA
 
 algo_SARSA = SARSA()

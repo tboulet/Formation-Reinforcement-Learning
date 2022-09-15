@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from env.oceanEnv import OceanEnv
+from environnements.oceanEnv import OceanEnv
 from TD.TDLearning import TD, SARSA
 from policies import DiscretePolicyForDiscreteState
 

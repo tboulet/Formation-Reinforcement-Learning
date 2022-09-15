@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import *
-from env.oceanEnv import transition_probability_ocean, reward_probability_ocean
+from environnements.oceanEnv import transition_probability_ocean, reward_probability_ocean
 from DP.dynamicProgramming import IterativePolicyEvaluation
 from policies import DiscretePolicyForDiscreteState
 

@@ -2,9 +2,9 @@ from MC.monteCarlo import MonteCarlo
 from DP.dynamicProgramming import IterativePolicyEvaluation, PolicyIteration, ValueIteration
 from TD.TDLearning import TD, SARSA
 
-from env.oceanEnv import OceanEnv, transition_probability_ocean, reward_probability_ocean
-from env.nimEnv import NimEnv, transition_probability_nim, reward_probability_nim
-from env.contextualBanditEnv import ContextualBanditEnv, transition_probability_CB, reward_probability_CB
+from environnements.oceanEnv import OceanEnv, transition_probability_ocean, reward_probability_ocean
+from environnements.nimEnv import NimEnv, transition_probability_nim, reward_probability_nim
+from environnements.contextualBanditEnv import ContextualBanditEnv, transition_probability_CB, reward_probability_CB
 
 map_name_to_algo = {"IterativePolicyEvaluation": {  "Algo": IterativePolicyEvaluation, 
                                                     "family": "DP"},
