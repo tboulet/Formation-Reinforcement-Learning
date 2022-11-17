@@ -2,8 +2,8 @@ from time import sleep, time
 from typing import Iterator, Tuple, Union
 import numpy as np
 
-from policies import *
-from utils import * 
+from src.policies import *
+from src.utils import * 
 
 class IterativePolicyEvaluation:
 

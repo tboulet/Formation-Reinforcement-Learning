@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from utils import *
+from src.utils import *
 from environnements.oceanEnv import transition_probability_ocean, reward_probability_ocean
 from DP.dynamicProgramming import IterativePolicyEvaluation
-from policies import DiscretePolicyForDiscreteState
+from src.policies import DiscretePolicyForDiscreteState
 
 
 algo_IPE = IterativePolicyEvaluation()

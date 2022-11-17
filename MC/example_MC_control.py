@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils import *
+from src.utils import *
 from environnements.oceanEnv import OceanEnv
 from MC.monteCarlo import MonteCarlo
 

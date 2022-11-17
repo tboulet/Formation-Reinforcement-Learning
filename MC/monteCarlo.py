@@ -2,8 +2,8 @@ from typing import Callable, Iterator, Tuple, Union
 import numpy as np
 import gym
 
-from policies import *
-from utils import Q_State, Scheduler, pretty_announcer
+from src.policies import *
+from src.utils import Q_State, Scheduler, pretty_announcer
 
 class MonteCarlo:
 
@@ -35,7 +35,7 @@ class MonteCarlo:
         timelimit : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
         initial_state_values : the initial values of the state values. Can be "random", "zeros", "optimistic" or a numpy array.
         typical_value : the typical value of the state values. Used to initialize the state values if initial_state_values is "random".
-        exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
+        exploring_starts : if True, the algorithm will start at a random-non terminal state. Use IF accessible env. Use for create minimum exploration in the case of deterministic src.policies.
         is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
         """
 
@@ -272,7 +272,7 @@ class MonteCarlo:
             timelimit : the number of maximal steps in an episode. After that the episode will be considered done. Use for non terminal env.
             initial_action_values : the initial action values. Can be "random", "zeros", "optimistic" or a numpy array.
             typical_value : the typical value of the action values. Used to initialize the action values if initial_action_values is "optimistic".
-            exploring_starts : if True, each env will start at a random state and a random action will be played. Use IF accessible env. Use for create minimum exploration in the case of deterministic policies.
+            exploring_starts : if True, each env will start at a random state and a random action will be played. Use IF accessible env. Use for create minimum exploration in the case of deterministic src.policies.
             is_state_done : a function returning whether a state is terminal. Used if exploring_starts is True for no initialization in the terminal states
             verbose : verbosity level. 0 is silent, 1 is the default
             """
@@ -498,7 +498,7 @@ class MonteCarlo:
                                     verbose : int = 1,
                                     ) -> Union[DiscretePolicyForDiscreteState, Tuple[DiscretePolicyForDiscreteState, np.ndarray]]:
         """This method perform a MonteCarlo method for the Control Problem.
-        It learns the optimal policy among the explorative policies for the given env.
+        It learns the optimal policy among the explorative src.policies for the given env.
 
         env : the envirronment to learn from
         gamma : the discount factor

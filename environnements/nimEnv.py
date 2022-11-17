@@ -1,6 +1,6 @@
 import random
 
-from utils import *
+from src.utils import *
 import gym
 from gym import spaces
 

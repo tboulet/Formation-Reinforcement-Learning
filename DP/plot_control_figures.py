@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from utils import *
+from src.utils import *
 from environnements.oceanEnv import transition_probability_ocean, reward_probability_ocean
 from DP.dynamicProgramming import PolicyIteration, ValueIteration
 
@@ -23,7 +23,7 @@ S = np.arange(0,11)
 algo_PI = PolicyIteration()
 
 ### Plot the state values estimated through training
-policies_and_actions = algo_PI.find_optimal_policy_yielding(transition_probability=transition_probability_ocean,
+src.policies_and_actions = algo_PI.find_optimal_policy_yielding(transition_probability=transition_probability_ocean,
                                                             reward_probability=reward_probability_ocean,
                                                             gamma=.98,
                                                             n_iterations=8,
@@ -36,7 +36,7 @@ policies_and_actions = algo_PI.find_optimal_policy_yielding(transition_probabili
                                                               )
 
 
-results = [e.copy() if type(e) == np.ndarray else e for e in policies_and_actions]
+results = [e.copy() if type(e) == np.ndarray else e for e in src.policies_and_actions]
 
 bact = 4                                                                   
 fig, ax = plt.subplots()
@@ -95,7 +95,7 @@ anim.save("figure/DP/policy_iteration.gif", writer = "ffmpeg", fps = 30)
 algo_VI = ValueIteration()
 
 ### Plot the state values estimated through training
-policies_and_actions = algo_VI.find_optimal_policy_yielding(transition_probability=transition_probability_ocean,
+src.policies_and_actions = algo_VI.find_optimal_policy_yielding(transition_probability=transition_probability_ocean,
                                                             reward_probability=reward_probability_ocean,
                                                             gamma=.98,
                                                             n_iterations=15,
@@ -106,7 +106,7 @@ policies_and_actions = algo_VI.find_optimal_policy_yielding(transition_probabili
                                                               )
 
 
-results = [e.copy() if type(e) == np.ndarray else e for e in policies_and_actions]
+results = [e.copy() if type(e) == np.ndarray else e for e in src.policies_and_actions]
 
 bact = 4                                                                   
 fig, ax = plt.subplots()

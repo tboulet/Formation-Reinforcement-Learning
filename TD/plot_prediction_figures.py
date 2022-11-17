@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from utils import *
+from src.utils import *
 from environnements.oceanEnv import OceanEnv
 from TD.TDLearning import TD, SARSA
-from policies import DiscretePolicyForDiscreteState
+from src.policies import DiscretePolicyForDiscreteState
 
 
 algo_TD = TD()

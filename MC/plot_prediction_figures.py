@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from utils import *
+from src.utils import *
 from environnements.oceanEnv import OceanEnv
 from MC.monteCarlo import MonteCarlo
-from policies import DiscretePolicyForDiscreteState
+from src.policies import DiscretePolicyForDiscreteState
 
 
 algo_MC = MonteCarlo()

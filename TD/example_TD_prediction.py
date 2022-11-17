@@ -1,9 +1,9 @@
 import numpy as np
 
-from utils import *
+from src.utils import *
 from environnements.oceanEnv import OceanEnv
 from TD.TDLearning import TD, SARSA
-from policies import DiscretePolicyForDiscreteState
+from src.policies import DiscretePolicyForDiscreteState
 
 policy_swim_randomly = DiscretePolicyForDiscreteState(probs = np.array([[0.8, 0.2] for _ in range(11)]))
 

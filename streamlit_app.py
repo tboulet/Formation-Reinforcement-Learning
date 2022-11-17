@@ -1,8 +1,8 @@
 import streamlit as st
 import numpy as np
 
-from utils import *
-from policies import DiscretePolicyForDiscreteState
+from src.utils import *
+from src.policies import DiscretePolicyForDiscreteState
 
 from playground_app.playground import *
 from playground_app.mappings import map_name_to_algo, map_name_to_env, map_problem_to_algo_names
