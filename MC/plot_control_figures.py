@@ -9,8 +9,8 @@ from src.policies import DiscretePolicyForDiscreteState
 
 algo_MC = MonteCarlo()
 
-n_iterations = 10
-n_iterations_evaluation = 50
+n_iterations = 8
+n_iterations_evaluation = 40
 S = np.arange(0,11)
 fps = 30
 
@@ -25,7 +25,7 @@ fps = 30
 ### ====================================================================================================================== ###
 
 ### Plot the action values estimated through training
-src.policies_and_actions = algo_MC.find_optimal_policy_yielding(    env = OceanEnv(),
+policies_and_actions = algo_MC.find_optimal_policy_yielding(    env = OceanEnv(),
                                                                 gamma=.98,
                                                                 n_iterations=n_iterations,
                                                                 evaluation_episodes=n_iterations_evaluation,
@@ -41,7 +41,7 @@ src.policies_and_actions = algo_MC.find_optimal_policy_yielding(    env = OceanE
                                                               )
 
 
-results = [e.copy() if type(e) == np.ndarray else e for e in src.policies_and_actions]
+results = [e.copy() if type(e) == np.ndarray else e for e in policies_and_actions]
 
 bact = 4                                                                   
 fig, ax = plt.subplots()
@@ -84,4 +84,4 @@ anim = FuncAnimation(   fig = fig,
                         frames = np.arange(len(results)),
                         interval = 20)
 plt.show()
-anim.save("figure/MC/MC_Control_eps_greedy.gif", writer = "ffmpeg", fps = 15)
+anim.save("figure/MC/MC_Control_eps_greedy.gif", writer = "ffmpeg", fps = 30)
