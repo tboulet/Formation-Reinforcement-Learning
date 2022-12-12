@@ -25,19 +25,19 @@ Policy-based RL methods and Importance Sampling are also covered in the slides (
 
 
 
-## Videos
+# Videos
 
 Videos of the lectures are available (in French only) on the [Automatants Youtube channel](https://www.youtube.com/channel/UCZ2wKX6bJg9Yz9KdHkzjw1Q).
 
 Part 1: Introduction to Reinforcement Learning and Model-based methods (RL Framework, Bellman Equations, Dynamic Programming)
 
-- [Lecture 1: Introduction to Reinforcement Learning](https://www.youtube.com/watch?v=9Z6Z5Z0Zzq8)
+- [Lecture 1: Introduction to Reinforcement Learning](https://www.youtube.com/watch?v=juNSptzWTJs)
 
 Part 2: Model-free methods and deeper concepts in RL : Monte Carlo, TD Learning (SARSA, Q-Learning, Expected SARSA), Exploration-Exploitation Dilemma, Off-Policy Learning, Deep RL intro
 
-- [Lecture 2: Deeper concepts in Reinforcement Learning](https://www.youtube.com/watch?v=9Z6Z5Z0Zzq8)
+- [Lecture 2: Deeper concepts in Reinforcement Learning](https://www.youtube.com/watch?v=LId8UpG_YY4)
 
-## Slides 
+# Slides 
 
 Slides of the lectures are available in this repository in French and English in the as powerpoint files "slides ENGLISH.pptx" and "slides FR.pptx".
 
@@ -46,7 +46,7 @@ Slides of the lectures are available in this repository in French and English in
 </p>
 
 
-## Gridworld environment
+# Gridworld environment
 
 <p align="center">
   <img src="figure/env_render.png" alt="Q values through training" width="60%"/>
@@ -54,7 +54,7 @@ Slides of the lectures are available in this repository in French and English in
 
 The Gridworld environment is available [here](https://github.com/tboulet/gridworld_rl). It was a simple gridworld environment developped to implement the algorithms seen in the lectures. The goal was to visualize Q values or probabilities of actions during the training of the agent. Several environments/grids (with different rewards, obstacles, etc.) and several agents (including your own) are available. More information on the GitHub repository.
 
-## Streamlit app
+# Streamlit app
 
 You can visualize the results of the algorithms seen in the lectures and the influence of many hyperparameters with the Streamlit app. 
 
