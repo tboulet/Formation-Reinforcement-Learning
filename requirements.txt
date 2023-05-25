@@ -2,3 +2,4 @@ gym
 numpy
 streamlit
 plotly==5.9.0
+altair==4.0.0

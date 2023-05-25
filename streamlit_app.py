@@ -13,16 +13,24 @@ config = {}
 # Input 1 : env and problem type
 st.sidebar.header("Problem")
 env_name = st.sidebar.selectbox("Environment", map_name_to_env.keys())
+st.sidebar.caption(map_name_to_env[env_name]["description"])
 problem =  st.sidebar.selectbox("Problem", ["Prediction Problem", "Control Problem"])
 
 env_dict = map_name_to_env[env_name]
 Pssa, Rsa = env_dict["model"]
 env = env_dict["Env"]()
+env_description = env_dict["description"]
+env_image_path = env_dict["image_path"]
 config["env"] = env
 config["transition_probability"] = Pssa
 config["reward_probability"] = Rsa
 config["range_values"] = env_dict["range_values"]
 config["problem"] = problem
+
+st.header(f"Environment : {env_name}")
+st.caption(env_description)
+st.image(env_image_path)
+
 
 if problem == "Prediction Problem":
     # Input 2 : policy to evaluate, value type and algo
